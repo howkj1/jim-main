@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Stealth — Benchmark Results</title>
+  <title>LLM Benchmark Results</title>
   <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
   <style>
 *, *::before, *::after { box-sizing: border-box; }
@@ -11,19 +11,23 @@
 [data-theme="light"]   { --bg:#ffffff; --text:#1a1a1a; --accent:#2980b9; --sidebar:#f5f7fa;
                          --border:#d0d7de; --th-bg:#eef2f7; --row-alt:#f8fafc;
                          --warn-bg:#fff8e1; --warn-border:#f39c12; --code-bg:#f4f4f4;
-                         --hr:#e0e0e0; --summary-bg:#eef2f7; --link:#2980b9; }
+                         --hr:#e0e0e0; --summary-bg:#eef2f7; --link:#2980b9;
+                         --tab-active:#2980b9; --tab-active-text:#fff; }
 [data-theme="dark"]    { --bg:#1e1e2e; --text:#cdd6f4; --accent:#89b4fa; --sidebar:#181825;
                          --border:#45475a; --th-bg:#313244; --row-alt:#252535;
                          --warn-bg:#2a2000; --warn-border:#f9e04b; --code-bg:#313244;
-                         --hr:#45475a; --summary-bg:#313244; --link:#89b4fa; }
+                         --hr:#45475a; --summary-bg:#313244; --link:#89b4fa;
+                         --tab-active:#89b4fa; --tab-active-text:#1e1e2e; }
 [data-theme="solar"]   { --bg:#fdf6e3; --text:#657b83; --accent:#268bd2; --sidebar:#eee8d5;
                          --border:#ccc4b0; --th-bg:#e8e0cc; --row-alt:#f5f0e4;
                          --warn-bg:#f7f3e0; --warn-border:#cb4b16; --code-bg:#eee8d5;
-                         --hr:#ccc4b0; --summary-bg:#e8e0cc; --link:#268bd2; }
+                         --hr:#ccc4b0; --summary-bg:#e8e0cc; --link:#268bd2;
+                         --tab-active:#268bd2; --tab-active-text:#fff; }
 [data-theme="twilight"] { --bg:#2d2a3e; --text:#d4bfff; --accent:#c084fc; --sidebar:#231f35;
                           --border:#4a4560; --th-bg:#3a3550; --row-alt:#322f45;
                           --warn-bg:#2a1f3d; --warn-border:#a855f7; --code-bg:#3a3550;
-                          --hr:#4a4560; --summary-bg:#3a3550; --link:#c084fc; }
+                          --hr:#4a4560; --summary-bg:#3a3550; --link:#c084fc;
+                          --tab-active:#c084fc; --tab-active-text:#2d2a3e; }
 
 html, body { margin:0; padding:0; background:var(--bg); color:var(--text);
              font-family:system-ui,-apple-system,sans-serif; font-size:15px;
@@ -45,6 +49,8 @@ body { display:flex; min-height:100vh; }
                    border-left:3px solid var(--accent); padding-left:13px; }
 .nav-sub { padding-left:28px; }
 .nav-sub.active { padding-left:25px; }
+.nav-machine { font-weight:600; font-size:0.82em; }
+.nav-machine.active { color:var(--tab-active); }
 .warn-badge { font-size:.8em; }
 
 /* ── Theme switcher ── */
@@ -61,9 +67,23 @@ body { display:flex; min-height:100vh; }
                      font-size:0.85em; }
 #theme-menu button:hover { background:rgba(128,128,128,.15); }
 
+/* ── Machine tab bar ── */
+.machine-tab-bar { display:flex; gap:6px; flex-wrap:wrap;
+                   padding:14px 0 10px; border-bottom:1px solid var(--border);
+                   margin-bottom:1.5rem; }
+.machine-tab-bar button { padding:7px 18px; border:1px solid var(--border);
+                           background:var(--th-bg); color:var(--text); cursor:pointer;
+                           border-radius:20px; font-size:0.85em; font-weight:500;
+                           transition:background .15s, color .15s; }
+.machine-tab-bar button:hover { border-color:var(--accent); color:var(--accent); }
+.machine-tab-bar button.active { background:var(--tab-active); color:var(--tab-active-text);
+                                  border-color:var(--tab-active); font-weight:700; }
+
 /* ── Main content ── */
 #content { flex:1; padding:2rem 2.5rem; max-width:1200px; overflow-x:hidden; }
 #content section { margin-bottom:2.5rem; }
+.tab-pane { display:none; }
+.tab-pane.active { display:block; }
 h1 { font-size:1.6em; border-bottom:2px solid var(--border); padding-bottom:.4em; }
 h2 { font-size:1.3em; border-bottom:1px solid var(--border); padding-bottom:.3em; }
 h3 { font-size:1.1em; }
@@ -111,7 +131,7 @@ td.model-name { font-family:monospace; font-size:.85em; white-space:nowrap; }
 .model-section details[open] > summary::before { content:"▼ "; }
 .model-section details > *:not(summary) { padding:0 1.2rem; }
 
-/* ── Leaderboard layout (table + chart side by side) ── */
+/* ── Leaderboard layout ── */
 .leaderboard-block { margin-bottom:1.5rem; }
 .lb-row { display:flex; gap:2rem; align-items:flex-start; flex-wrap:wrap; }
 .lb-row .table-wrap { flex:0 0 auto; }
@@ -122,7 +142,7 @@ td.model-name { font-family:monospace; font-size:.85em; white-space:nowrap; }
 .cbar-title { font-size:.8em; font-weight:600; opacity:.65; margin-bottom:.5em;
               text-transform:uppercase; letter-spacing:.04em; }
 .cbar-row { display:flex; align-items:center; margin:3px 0; gap:8px; font-size:.8em; }
-.cbar-label { width:140px; text-align:right; font-family:monospace; flex-shrink:0;
+.cbar-label { width:200px; text-align:right; font-family:monospace; flex-shrink:0;
               white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
               opacity:.85; }
 .cbar-track { flex:1; background:var(--row-alt); border-radius:3px; height:20px;
@@ -131,6 +151,12 @@ td.model-name { font-family:monospace; font-size:.85em; white-space:nowrap; }
              padding:0 5px; min-width:4px; }
 .cbar-val { color:#fff; font-size:.75em; font-weight:600; white-space:nowrap;
             text-shadow:0 1px 2px rgba(0,0,0,.45); }
+
+/* ── Machine legend ── */
+.machine-legend { display:flex; gap:1.2rem; flex-wrap:wrap; margin:1rem 0; font-size:.85em; }
+.legend-dot { display:inline-block; width:12px; height:12px; border-radius:50%;
+              margin-right:4px; vertical-align:middle; }
+.legend-label { vertical-align:middle; }
 
 /* ── Expand controls ── */
 .expand-controls { margin:1rem 0; display:flex; gap:.5rem; }
@@ -152,34 +178,49 @@ td.model-name { font-family:monospace; font-size:.85em; white-space:nowrap; }
     <button onclick="applyTheme('twilight')">🌆 Twilight</button>
   </div>
 </div>
+<div class="nav-section">Machines</div>
+<a class="nav-link nav-machine" href="#" data-tab="stealth">AMD Ryzen 7 + RTX 2080 Super</a>
+<a class="nav-link nav-machine" href="#" data-tab="m4">Apple M4 Mac Mini 16GB</a>
+<a class="nav-link nav-machine" href="#" data-tab="compare">⚖ Compare</a>
 <div class="nav-section">Pages</div>
-<a class="nav-link" href="#overview" data-section="overview">Overview</a>
-<a class="nav-link" href="#leaderboard" data-section="leaderboard">Leaderboard</a>
+<a class="nav-link nav-tablink" data-tab-link href="#leaderboard" data-section="leaderboard">Leaderboard</a>
 <div class="nav-section">Tables</div>
-<a class="nav-link nav-sub" href="#cross-model-comparison" data-section="cross-model-comparison">Cross-Model</a>
-<a class="nav-link nav-sub" href="#lb-tg" data-section="lb-tg">TG Speed</a>
-<a class="nav-link nav-sub" href="#lb-pp" data-section="lb-pp">PP Speed</a>
-<a class="nav-link nav-sub" href="#lb-ttft" data-section="lb-ttft">TTFT</a>
-<a class="nav-link nav-sub" href="#swarm-routing-recommendations" data-section="swarm-routing-recommendations">Routing Guide</a>
-<a class="nav-link nav-sub" href="#key-takeaways" data-section="key-takeaways">Key Takeaways</a>
-<div class="nav-section">Models</div>
-<a class="nav-link nav-sub" href="#model-qwen3-14b" data-section="model-qwen3-14b">qwen3:14b</a>
-<a class="nav-link nav-sub" href="#model-deepseek-r1-14b" data-section="model-deepseek-r1-14b">deepseek-r1:14b</a>
-<a class="nav-link nav-sub" href="#model-qwen2-5-coder-14b" data-section="model-qwen2-5-coder-14b">qwen2.5-coder:14b</a>
-<a class="nav-link nav-sub" href="#model-phi4-latest" data-section="model-phi4-latest">phi4:latest</a>
-<a class="nav-link nav-sub" href="#model-deepseek-r1-8b" data-section="model-deepseek-r1-8b">deepseek-r1:8b</a>
-<a class="nav-link nav-sub" href="#model-qwen3-8b" data-section="model-qwen3-8b">qwen3:8b</a>
-<a class="nav-link nav-sub" href="#model-qwen2-5-coder-7b" data-section="model-qwen2-5-coder-7b">qwen2.5-coder:7b</a>
-<a class="nav-link nav-sub" href="#model-llama3-1-8b" data-section="model-llama3-1-8b">llama3.1:8b</a>
-<a class="nav-link nav-sub" href="#model-gemma3-4b" data-section="model-gemma3-4b">gemma3:4b</a>
-<a class="nav-link nav-sub" href="#model-nemotron-mini-latest" data-section="model-nemotron-mini-latest">nemotron-mini:latest</a>
-<a class="nav-link nav-sub" href="#model-qwen3-32b" data-section="model-qwen3-32b">qwen3:32b</a>
-<a class="nav-link nav-sub" href="#model-gemma4-e2b" data-section="model-gemma4-e2b">gemma4:e2b</a>
-<a class="nav-link nav-sub" href="#model-gemma4-26b" data-section="model-gemma4-26b">gemma4:26b</a>
-<a class="nav-link nav-sub" href="#model-qwen3-6" data-section="model-qwen3-6">qwen3.6</a>
-
+<a class="nav-link nav-sub nav-tablink" data-tab-link href="#cross-model-comparison" data-section="cross-model-comparison">Cross-Model</a>
+<a class="nav-link nav-sub nav-tablink" data-tab-link href="#lb-tg" data-section="lb-tg">TG Speed</a>
+<a class="nav-link nav-sub nav-tablink" data-tab-link href="#lb-pp" data-section="lb-pp">PP Speed</a>
+<a class="nav-link nav-sub nav-tablink" data-tab-link href="#lb-ttft" data-section="lb-ttft">TTFT</a>
+<a class="nav-link nav-sub nav-tablink" data-tab-link href="#swarm-routing-recommendations" data-section="swarm-routing-recommendations">Routing Guide</a>
+<a class="nav-link nav-sub nav-tablink" data-tab-link href="#key-takeaways" data-section="key-takeaways">Key Takeaways</a>
+<a class="nav-link nav-sub" href="#" data-tab="compare" data-section="comparison">⚖ Cross-Machine</a>
+<div class="nav-section nav-models-stealth">Models — AMD Ryzen 7 + RTX 2080 Super</div>
+<a class="nav-link nav-sub nav-models-stealth" href="#model-qwen3-14b" data-section="model-qwen3-14b">qwen3:14b</a>
+<a class="nav-link nav-sub nav-models-stealth" href="#model-deepseek-r1-14b" data-section="model-deepseek-r1-14b">deepseek-r1:14b</a>
+<a class="nav-link nav-sub nav-models-stealth" href="#model-qwen2-5-coder-14b" data-section="model-qwen2-5-coder-14b">qwen2.5-coder:14b</a>
+<a class="nav-link nav-sub nav-models-stealth" href="#model-phi4-latest" data-section="model-phi4-latest">phi4:latest</a>
+<a class="nav-link nav-sub nav-models-stealth" href="#model-deepseek-r1-8b" data-section="model-deepseek-r1-8b">deepseek-r1:8b</a>
+<a class="nav-link nav-sub nav-models-stealth" href="#model-qwen3-8b" data-section="model-qwen3-8b">qwen3:8b</a>
+<a class="nav-link nav-sub nav-models-stealth" href="#model-qwen2-5-coder-7b" data-section="model-qwen2-5-coder-7b">qwen2.5-coder:7b</a>
+<a class="nav-link nav-sub nav-models-stealth" href="#model-llama3-1-8b" data-section="model-llama3-1-8b">llama3.1:8b</a>
+<a class="nav-link nav-sub nav-models-stealth" href="#model-gemma3-4b" data-section="model-gemma3-4b">gemma3:4b</a>
+<a class="nav-link nav-sub nav-models-stealth" href="#model-nemotron-mini-latest" data-section="model-nemotron-mini-latest">nemotron-mini:latest</a>
+<a class="nav-link nav-sub nav-models-stealth" href="#model-qwen3-32b" data-section="model-qwen3-32b">qwen3:32b</a>
+<a class="nav-link nav-sub nav-models-stealth" href="#model-gemma4-e2b" data-section="model-gemma4-e2b">gemma4:e2b</a>
+<a class="nav-link nav-sub nav-models-stealth" href="#model-gemma4-26b" data-section="model-gemma4-26b">gemma4:26b</a>
+<a class="nav-link nav-sub nav-models-stealth" href="#model-qwen3-6" data-section="model-qwen3-6">qwen3.6</a>
+<div class="nav-section nav-models-m4">Models — Apple M4 Mac Mini 16GB</div>
+<a class="nav-link nav-sub nav-models-m4" href="#model-gemma4-e4b" data-section="model-gemma4-e4b">gemma4:e4b</a>
+<a class="nav-link nav-sub nav-models-m4" href="#model-qwen3-8b" data-section="model-qwen3-8b">qwen3:8b</a>
+<a class="nav-link nav-sub nav-models-m4" href="#model-qwen2-5-14b" data-section="model-qwen2-5-14b">qwen2.5:14b</a>
+<a class="nav-link nav-sub nav-models-m4" href="#model-mistral-nemo" data-section="model-mistral-nemo">mistral-nemo</a>
+<a class="nav-link nav-sub nav-models-m4" href="#model-jjansen-adapt-finance-llama2-7b" data-section="model-jjansen-adapt-finance-llama2-7b">jjansen/adapt-finance-llama2-7b</a>
 </nav>
 <main id="content">
+<div class="machine-tab-bar">
+<button class="tab-btn active" data-tab="stealth">AMD Ryzen 7 + RTX 2080 Super</button>
+<button class="tab-btn" data-tab="m4">Apple M4 Mac Mini 16GB</button>
+<button class="tab-btn" data-tab="compare">⚖ Compare</button>
+</div>
+<div id="tab-stealth" class="tab-pane active">
 <section id="leaderboard">
 <h2>Leaderboard</h2>
 <section id="lb-tg" class="leaderboard-block">
@@ -19792,6 +19833,6821 @@ td.model-name { font-family:monospace; font-size:.85em; white-space:nowrap; }
 
 <hr>
 </details></section>
+</div>
+<div id="tab-m4" class="tab-pane">
+<section id="leaderboard">
+<h2>Leaderboard</h2>
+<section id="lb-tg" class="leaderboard-block">
+<h3>⚡ TG Speed (tok/s)</h3>
+<div class="lb-row"><div class="table-wrap"><table class="bench-table leaderboard-table"><thead><tr><th>Rank</th><th>Model</th><th>Size</th><th>tg=64</th><th>tg=256</th><th>Avg</th></tr></thead><tbody>
+<tr><td class="nowrap">🥇</td><td class="model-name">gemma4:e4b</td><td class="nowrap">?</td><td class="nowrap">27.0</td><td class="nowrap">26.4</td><td class="nowrap"><strong>26.7</strong></td></tr>
+<tr><td class="nowrap">🥈</td><td class="model-name">jjansen/adapt-finance-llama2-7b</td><td class="nowrap">?</td><td class="nowrap">24.4</td><td class="nowrap">24.2</td><td class="nowrap"><strong>24.3</strong></td></tr>
+<tr><td class="nowrap">🥉</td><td class="model-name">qwen3:8b</td><td class="nowrap">?</td><td class="nowrap">19.5</td><td class="nowrap">19.5</td><td class="nowrap"><strong>19.5</strong></td></tr>
+<tr><td class="nowrap">4</td><td class="model-name">mistral-nemo</td><td class="nowrap">?</td><td class="nowrap">14.5</td><td class="nowrap">14.5</td><td class="nowrap"><strong>14.5</strong></td></tr>
+<tr><td class="nowrap">5</td><td class="model-name">qwen2.5:14b</td><td class="nowrap">?</td><td class="nowrap">11.3</td><td class="nowrap">11.3</td><td class="nowrap"><strong>11.3</strong></td></tr>
+</tbody></table></div><div class="lb-chart"><div class="cbar-wrap"><div class="cbar-title">TG Speed (avg tok/s)</div><div class="cbar-row"><span class="cbar-label" title="gemma4:e4b">gemma4:e4b</span><div class="cbar-track"><div class="cbar-fill" style="width:100.0%;background:hsl(120,55%,42%)"><span class="cbar-val">26.7 tok/s</span></div></div></div><div class="cbar-row"><span class="cbar-label" title="jjansen/adapt-finance-llama2-7b">jjansen/adapt-finance-llama2-7b</span><div class="cbar-track"><div class="cbar-fill" style="width:91.0%;background:hsl(90,55%,42%)"><span class="cbar-val">24.3 tok/s</span></div></div></div><div class="cbar-row"><span class="cbar-label" title="qwen3:8b">qwen3:8b</span><div class="cbar-track"><div class="cbar-fill" style="width:73.0%;background:hsl(60,55%,42%)"><span class="cbar-val">19.5 tok/s</span></div></div></div><div class="cbar-row"><span class="cbar-label" title="mistral-nemo">mistral-nemo</span><div class="cbar-track"><div class="cbar-fill" style="width:54.3%;background:hsl(30,55%,42%)"><span class="cbar-val">14.5 tok/s</span></div></div></div><div class="cbar-row"><span class="cbar-label" title="qwen2.5:14b">qwen2.5:14b</span><div class="cbar-track"><div class="cbar-fill" style="width:42.3%;background:hsl(0,55%,42%)"><span class="cbar-val">11.3 tok/s</span></div></div></div></div></div></div></section>
+<section id="lb-pp" class="leaderboard-block">
+<h3>🚀 PP Speed (tok/s @ pp=512)</h3>
+<div class="lb-row"><div class="table-wrap"><table class="bench-table leaderboard-table"><thead><tr><th>Rank</th><th>Model</th><th>PP tok/s</th><th>TTFT (ms)</th></tr></thead><tbody>
+<tr><td class="nowrap">🥇</td><td class="model-name">gemma4:e4b</td><td class="nowrap"><strong>360</strong></td><td class="nowrap">1,457</td></tr>
+<tr><td class="nowrap">🥈</td><td class="model-name">jjansen/adapt-finance-llama2-7b</td><td class="nowrap"><strong>274</strong></td><td class="nowrap">1,514</td></tr>
+<tr><td class="nowrap">🥉</td><td class="model-name">qwen3:8b</td><td class="nowrap"><strong>224</strong></td><td class="nowrap">2,271</td></tr>
+<tr><td class="nowrap">4</td><td class="model-name">mistral-nemo</td><td class="nowrap"><strong>154</strong></td><td class="nowrap">3,146</td></tr>
+<tr><td class="nowrap">5</td><td class="model-name">qwen2.5:14b</td><td class="nowrap"><strong>127</strong></td><td class="nowrap">3,942</td></tr>
+</tbody></table></div><div class="lb-chart"><div class="cbar-wrap"><div class="cbar-title">PP Speed (tok/s @ pp=512)</div><div class="cbar-row"><span class="cbar-label" title="gemma4:e4b">gemma4:e4b</span><div class="cbar-track"><div class="cbar-fill" style="width:100.0%;background:hsl(120,55%,42%)"><span class="cbar-val">360 tok/s</span></div></div></div><div class="cbar-row"><span class="cbar-label" title="jjansen/adapt-finance-llama2-7b">jjansen/adapt-finance-llama2-7b</span><div class="cbar-track"><div class="cbar-fill" style="width:76.1%;background:hsl(90,55%,42%)"><span class="cbar-val">274 tok/s</span></div></div></div><div class="cbar-row"><span class="cbar-label" title="qwen3:8b">qwen3:8b</span><div class="cbar-track"><div class="cbar-fill" style="width:62.2%;background:hsl(60,55%,42%)"><span class="cbar-val">224 tok/s</span></div></div></div><div class="cbar-row"><span class="cbar-label" title="mistral-nemo">mistral-nemo</span><div class="cbar-track"><div class="cbar-fill" style="width:42.8%;background:hsl(30,55%,42%)"><span class="cbar-val">154 tok/s</span></div></div></div><div class="cbar-row"><span class="cbar-label" title="qwen2.5:14b">qwen2.5:14b</span><div class="cbar-track"><div class="cbar-fill" style="width:35.3%;background:hsl(0,55%,42%)"><span class="cbar-val">127 tok/s</span></div></div></div></div></div></div></section>
+<section id="lb-ttft" class="leaderboard-block">
+<h3>⏱ TTFT — fastest first (ms)</h3>
+<div class="lb-row"><div class="table-wrap"><table class="bench-table leaderboard-table"><thead><tr><th>Rank</th><th>Model</th><th>TTFT (ms)</th><th>PP tok/s</th></tr></thead><tbody>
+<tr><td class="nowrap">🥇</td><td class="model-name">gemma4:e4b</td><td class="nowrap"><strong>1,457</strong></td><td class="nowrap">360</td></tr>
+<tr><td class="nowrap">🥈</td><td class="model-name">jjansen/adapt-finance-llama2-7b</td><td class="nowrap"><strong>1,514</strong></td><td class="nowrap">274</td></tr>
+<tr><td class="nowrap">🥉</td><td class="model-name">qwen3:8b</td><td class="nowrap"><strong>2,271</strong></td><td class="nowrap">224</td></tr>
+<tr><td class="nowrap">4</td><td class="model-name">mistral-nemo</td><td class="nowrap"><strong>3,146</strong></td><td class="nowrap">154</td></tr>
+<tr><td class="nowrap">5</td><td class="model-name">qwen2.5:14b</td><td class="nowrap"><strong>3,942</strong></td><td class="nowrap">127</td></tr>
+</tbody></table></div><div class="lb-chart"><div class="cbar-wrap"><div class="cbar-title">TTFT (ms, lower = faster)</div><div class="cbar-row"><span class="cbar-label" title="gemma4:e4b">gemma4:e4b</span><div class="cbar-track"><div class="cbar-fill" style="width:37.0%;background:hsl(120,55%,42%)"><span class="cbar-val">1,457 ms</span></div></div></div><div class="cbar-row"><span class="cbar-label" title="jjansen/adapt-finance-llama2-7b">jjansen/adapt-finance-llama2-7b</span><div class="cbar-track"><div class="cbar-fill" style="width:38.4%;background:hsl(90,55%,42%)"><span class="cbar-val">1,514 ms</span></div></div></div><div class="cbar-row"><span class="cbar-label" title="qwen3:8b">qwen3:8b</span><div class="cbar-track"><div class="cbar-fill" style="width:57.6%;background:hsl(60,55%,42%)"><span class="cbar-val">2,271 ms</span></div></div></div><div class="cbar-row"><span class="cbar-label" title="mistral-nemo">mistral-nemo</span><div class="cbar-track"><div class="cbar-fill" style="width:79.8%;background:hsl(30,55%,42%)"><span class="cbar-val">3,146 ms</span></div></div></div><div class="cbar-row"><span class="cbar-label" title="qwen2.5:14b">qwen2.5:14b</span><div class="cbar-track"><div class="cbar-fill" style="width:100.0%;background:hsl(0,55%,42%)"><span class="cbar-val">3,942 ms</span></div></div></div></div></div></div></section>
+</section>
+
+<div class="expand-controls">
+  <button id="expand-all">Expand All</button>
+  <button id="collapse-all">Collapse All</button>
+</div>
+
+<section id="apple-m4-mac-mini-16gb-benchmark-summary"><h1>Apple M4 Mac Mini 16GB — Benchmark Summary</h1>
+
+<p><strong>Machine:</strong> Apple M4, 16GB unified memory, macOS</p>
+<p><strong>Tool:</strong> llama-benchy | <strong>Date:</strong> 2026-04-19</p>
+<p><strong>Method:</strong> 3 runs per test, latency mode: generation</p>
+
+<hr>
+
+<h3 id="cross-model-comparison">Cross-Model Comparison</h3>
+
+<h4 id="generation-throughput-tg-tok-s">Generation Throughput (TG tok/s)</h4>
+
+<div class="table-wrap"><table class="bench-table"><thead><tr>
+<th>Model</th>
+<th>Size</th>
+<th>tg=64 @ pp=512</th>
+<th>tg=256 @ pp=512</th>
+<th>tg=64 @ pp=2048</th>
+<th>tg=256 @ pp=2048</th>
+<th>Tested from</th>
+<th>Date</th>
+</tr></thead><tbody>
+<tr>
+<td class="model-name">gemma4:e4b</td>
+<td class="nowrap">?</td>
+<td class="nowrap">27.0</td>
+<td class="nowrap">26.4</td>
+<td class="nowrap">26.5</td>
+<td class="nowrap">26.0</td>
+<td class="nowrap">Apple M4 Mac Mini 16GB</td>
+<td class="nowrap">2026-04-19</td>
+</tr>
+<tr>
+<td class="model-name">qwen3:8b</td>
+<td class="nowrap">?</td>
+<td class="nowrap">19.5</td>
+<td class="nowrap">19.5</td>
+<td class="nowrap">18.8</td>
+<td class="nowrap">18.7</td>
+<td class="nowrap">Apple M4 Mac Mini 16GB</td>
+<td class="nowrap">2026-04-19</td>
+</tr>
+<tr>
+<td class="model-name">qwen2.5:14b</td>
+<td class="nowrap">?</td>
+<td class="nowrap">11.3</td>
+<td class="nowrap">11.3</td>
+<td class="nowrap">10.9</td>
+<td class="nowrap">10.8</td>
+<td class="nowrap">Apple M4 Mac Mini 16GB</td>
+<td class="nowrap">2026-04-19</td>
+</tr>
+<tr>
+<td class="model-name">mistral-nemo</td>
+<td class="nowrap">?</td>
+<td class="nowrap">14.5</td>
+<td class="nowrap">14.5</td>
+<td class="nowrap">14.0</td>
+<td class="nowrap">14.0</td>
+<td class="nowrap">Apple M4 Mac Mini 16GB</td>
+<td class="nowrap">2026-04-19</td>
+</tr>
+<tr>
+<td class="model-name">jjansen/adapt-finance-llama2-7b</td>
+<td class="nowrap">?</td>
+<td class="nowrap">24.4</td>
+<td class="nowrap">24.2</td>
+<td class="nowrap">21.9</td>
+<td class="nowrap">21.5</td>
+<td class="nowrap">Apple M4 Mac Mini 16GB</td>
+<td class="nowrap">2026-04-19</td>
+</tr>
+</tbody></table></div>
+<div class="cbar-wrap"><div class="cbar-title">TG Speed comparison (avg tok/s @ pp=512)</div><div class="cbar-row"><span class="cbar-label" title="gemma4:e4b">gemma4:e4b</span><div class="cbar-track"><div class="cbar-fill" style="width:100.0%;background:hsl(120,55%,42%)"><span class="cbar-val">26.7 tok/s</span></div></div></div><div class="cbar-row"><span class="cbar-label" title="jjansen/adapt-finance-llama2-7b">jjansen/adapt-finance-llama2-7b</span><div class="cbar-track"><div class="cbar-fill" style="width:91.0%;background:hsl(90,55%,42%)"><span class="cbar-val">24.3 tok/s</span></div></div></div><div class="cbar-row"><span class="cbar-label" title="qwen3:8b">qwen3:8b</span><div class="cbar-track"><div class="cbar-fill" style="width:73.0%;background:hsl(60,55%,42%)"><span class="cbar-val">19.5 tok/s</span></div></div></div><div class="cbar-row"><span class="cbar-label" title="mistral-nemo">mistral-nemo</span><div class="cbar-track"><div class="cbar-fill" style="width:54.3%;background:hsl(30,55%,42%)"><span class="cbar-val">14.5 tok/s</span></div></div></div><div class="cbar-row"><span class="cbar-label" title="qwen2.5:14b">qwen2.5:14b</span><div class="cbar-track"><div class="cbar-fill" style="width:42.3%;background:hsl(0,55%,42%)"><span class="cbar-val">11.3 tok/s</span></div></div></div></div>
+
+<h4 id="prompt-processing-throughput-pp-tok-s-pp-512">Prompt Processing Throughput (PP tok/s @ pp=512)</h4>
+
+<div class="table-wrap"><table class="bench-table"><thead><tr>
+<th>Model</th>
+<th>PP tok/s</th>
+<th>TTFT (ms)</th>
+<th>Tested from</th>
+<th>Date</th>
+</tr></thead><tbody>
+<tr>
+<td class="model-name">gemma4:e4b</td>
+<td class="nowrap">~360</td>
+<td class="nowrap">1,457</td>
+<td class="nowrap">Apple M4 Mac Mini 16GB</td>
+<td class="nowrap">2026-04-19</td>
+</tr>
+<tr>
+<td class="model-name">qwen3:8b</td>
+<td class="nowrap">~224</td>
+<td class="nowrap">2,271</td>
+<td class="nowrap">Apple M4 Mac Mini 16GB</td>
+<td class="nowrap">2026-04-19</td>
+</tr>
+<tr>
+<td class="model-name">qwen2.5:14b</td>
+<td class="nowrap">~127</td>
+<td class="nowrap">3,942</td>
+<td class="nowrap">Apple M4 Mac Mini 16GB</td>
+<td class="nowrap">2026-04-19</td>
+</tr>
+<tr>
+<td class="model-name">mistral-nemo</td>
+<td class="nowrap">~154</td>
+<td class="nowrap">3,146</td>
+<td class="nowrap">Apple M4 Mac Mini 16GB</td>
+<td class="nowrap">2026-04-19</td>
+</tr>
+<tr>
+<td class="model-name">jjansen/adapt-finance-llama2-7b</td>
+<td class="nowrap">~274</td>
+<td class="nowrap">1,514</td>
+<td class="nowrap">Apple M4 Mac Mini 16GB</td>
+<td class="nowrap">2026-04-19</td>
+</tr>
+</tbody></table></div>
+<div class="cbar-wrap"><div class="cbar-title">PP Speed comparison (tok/s @ pp=512)</div><div class="cbar-row"><span class="cbar-label" title="gemma4:e4b">gemma4:e4b</span><div class="cbar-track"><div class="cbar-fill" style="width:100.0%;background:hsl(120,55%,42%)"><span class="cbar-val">360 tok/s</span></div></div></div><div class="cbar-row"><span class="cbar-label" title="jjansen/adapt-finance-llama2-7b">jjansen/adapt-finance-llama2-7b</span><div class="cbar-track"><div class="cbar-fill" style="width:76.1%;background:hsl(90,55%,42%)"><span class="cbar-val">274 tok/s</span></div></div></div><div class="cbar-row"><span class="cbar-label" title="qwen3:8b">qwen3:8b</span><div class="cbar-track"><div class="cbar-fill" style="width:62.2%;background:hsl(60,55%,42%)"><span class="cbar-val">224 tok/s</span></div></div></div><div class="cbar-row"><span class="cbar-label" title="mistral-nemo">mistral-nemo</span><div class="cbar-track"><div class="cbar-fill" style="width:42.8%;background:hsl(30,55%,42%)"><span class="cbar-val">154 tok/s</span></div></div></div><div class="cbar-row"><span class="cbar-label" title="qwen2.5:14b">qwen2.5:14b</span><div class="cbar-track"><div class="cbar-fill" style="width:35.3%;background:hsl(0,55%,42%)"><span class="cbar-val">127 tok/s</span></div></div></div></div>
+
+<h4 id="thermal-profile-peak-across-all-tests">Thermal Profile (peak across all tests)</h4>
+
+<div class="table-wrap"><table class="bench-table"><thead><tr>
+<th>Model</th>
+<th>GPU peak</th>
+<th>CPU peak</th>
+<th>Tested from</th>
+<th>Date</th>
+<th>Notes</th>
+</tr></thead><tbody>
+<tr>
+<td class="model-name">gemma4:e4b</td>
+<td class="nowrap">0°C</td>
+<td class="nowrap">4.93°C</td>
+<td class="nowrap">Apple M4 Mac Mini 16GB</td>
+<td class="nowrap">2026-04-19</td>
+<td></td>
+</tr>
+<tr>
+<td class="model-name">qwen3:8b</td>
+<td class="nowrap">0°C</td>
+<td class="nowrap">5.57°C</td>
+<td class="nowrap">Apple M4 Mac Mini 16GB</td>
+<td class="nowrap">2026-04-19</td>
+<td></td>
+</tr>
+<tr>
+<td class="model-name">qwen2.5:14b</td>
+<td class="nowrap">0°C</td>
+<td class="nowrap">8.56°C</td>
+<td class="nowrap">Apple M4 Mac Mini 16GB</td>
+<td class="nowrap">2026-04-19</td>
+<td></td>
+</tr>
+<tr>
+<td class="model-name">mistral-nemo</td>
+<td class="nowrap">0°C</td>
+<td class="nowrap">6.46°C</td>
+<td class="nowrap">Apple M4 Mac Mini 16GB</td>
+<td class="nowrap">2026-04-19</td>
+<td></td>
+</tr>
+<tr>
+<td class="model-name">jjansen/adapt-finance-llama2-7b</td>
+<td class="nowrap">0°C</td>
+<td class="nowrap">9.51°C</td>
+<td class="nowrap">Apple M4 Mac Mini 16GB</td>
+<td class="nowrap">2026-04-19</td>
+<td></td>
+</tr>
+</tbody></table></div>
+
+<hr>
+
+<p><em>Per-model reports follow below.</em></p>
+
+<hr>
+
+<section id="model-gemma4-e4b" class="model-section">
+<details open><summary class="model-header"><h2>Benchmark Report: gemma4:e4b</h2></summary>
+
+<p><strong>Date:</strong> 2026-04-19 14:16</p>
+<p><strong>Machine:</strong> Apple M4, 16GB unified memory, macOS</p>
+<p><strong>Endpoint:</strong> http://localhost:11434/v1</p>
+<p><strong>Run platform:</strong> Darwin arm64</p>
+<p><strong>Runs per test:</strong> 3</p>
+
+<hr>
+
+<h3 id="summary">Summary</h3>
+
+<div class="table-wrap"><table class="bench-table"><thead><tr>
+<th>pp</th>
+<th>tg</th>
+<th>Duration (s)</th>
+<th>GPU peak °C</th>
+<th>CPU peak °C</th>
+</tr></thead><tbody>
+<tr>
+<td class="nowrap">512</td>
+<td class="nowrap">64</td>
+<td class="nowrap">87</td>
+<td class="nowrap">0</td>
+<td class="nowrap">3.78</td>
+</tr>
+<tr>
+<td class="nowrap">512</td>
+<td class="nowrap">256</td>
+<td class="nowrap">153</td>
+<td class="nowrap">0</td>
+<td class="nowrap">4.68</td>
+</tr>
+<tr>
+<td class="nowrap">2048</td>
+<td class="nowrap">64</td>
+<td class="nowrap">127</td>
+<td class="nowrap">0</td>
+<td class="nowrap">3.04</td>
+</tr>
+<tr>
+<td class="nowrap">2048</td>
+<td class="nowrap">256</td>
+<td class="nowrap">138</td>
+<td class="nowrap">0</td>
+<td class="nowrap">4.93</td>
+</tr>
+</tbody></table></div>
+
+<hr>
+
+<h3 id="pp-512-tg-64">pp=512 tg=64</h3>
+
+<div class="table-wrap"><table class="bench-table"><thead><tr>
+<th>model</th>
+<th>test</th>
+<th>t/s</th>
+<th>peak t/s</th>
+<th>ttfr (ms)</th>
+<th>est_ppt (ms)</th>
+<th>e2e_ttft (ms)</th>
+</tr></thead><tbody>
+<tr>
+<td class="model-name">gemma4:e4b</td>
+<td>pp512</td>
+<td class="nowrap">360.90 ± 9.89</td>
+<td class="nowrap"></td>
+<td class="nowrap">1471.18 ± 9.69</td>
+<td class="nowrap">1298.37 ± 9.69</td>
+<td class="nowrap">1471.18 ± 9.69</td>
+</tr>
+<tr>
+<td class="model-name">gemma4:e4b</td>
+<td>tg64</td>
+<td class="nowrap">27.01 ± 0.57</td>
+<td class="nowrap">29.00 ± 0.00</td>
+<td class="nowrap"></td>
+<td class="nowrap"></td>
+<td class="nowrap"></td>
+</tr>
+</tbody></table></div>
+
+<h4 id="temperatures-utilization">Temperatures &amp; Utilization</h4>
+
+<div class="mermaid" data-src="xychart-beta
+  title &quot;Temperature — pp=512 tg=64&quot;
+  x-axis &quot;Time (s)&quot; [0, 3, 5, 7, 10, 12, 15, 17, 20, 22, 25, 27, 30, 32, 35, 37, 40, 42, 45, 47, 50, 52, 55, 57, 59, 62, 65, 67, 70, 72, 75, 77, 80, 82, 85]
+  y-axis &quot;W&quot; 0 --&gt; 8.78
+  line &quot;CPU W&quot; [1.14, 0.17, 1.35, 0.12, 0.23, 0.08, 0.28, 0.45, 0.11, 0.63, 0.21, 1.09, 0.08, 3.1, 0.1, 1.18, 0.1, 0.34, 0.1, 0.11, 1.48, 0.1, 1.12, 0.89, 3.78, 2.61, 1.04, 0.97, 1.35, 0.36, 3.61, 0.84, 1.17, 0.14, 1.8]">xychart-beta
+  title &quot;Temperature — pp=512 tg=64&quot;
+  x-axis &quot;Time (s)&quot; [0, 3, 5, 7, 10, 12, 15, 17, 20, 22, 25, 27, 30, 32, 35, 37, 40, 42, 45, 47, 50, 52, 55, 57, 59, 62, 65, 67, 70, 72, 75, 77, 80, 82, 85]
+  y-axis &quot;W&quot; 0 --&gt; 8.78
+  line &quot;CPU W&quot; [1.14, 0.17, 1.35, 0.12, 0.23, 0.08, 0.28, 0.45, 0.11, 0.63, 0.21, 1.09, 0.08, 3.1, 0.1, 1.18, 0.1, 0.34, 0.1, 0.11, 1.48, 0.1, 1.12, 0.89, 3.78, 2.61, 1.04, 0.97, 1.35, 0.36, 3.61, 0.84, 1.17, 0.14, 1.8]</div>
+
+<details><summary>Raw readings</summary>
+
+<div class="table-wrap"><table class="bench-table"><thead><tr>
+<th>Time (s)</th>
+<th>GPU °C</th>
+<th>GPU util %</th>
+<th>GPU W</th>
+<th>CPU °C</th>
+</tr></thead><tbody>
+<tr>
+<td class="nowrap">0</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.14</td>
+</tr>
+<tr>
+<td class="nowrap">3</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.17</td>
+</tr>
+<tr>
+<td class="nowrap">5</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.35</td>
+</tr>
+<tr>
+<td class="nowrap">7</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.12</td>
+</tr>
+<tr>
+<td class="nowrap">10</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.23</td>
+</tr>
+<tr>
+<td class="nowrap">12</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.08</td>
+</tr>
+<tr>
+<td class="nowrap">15</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.28</td>
+</tr>
+<tr>
+<td class="nowrap">17</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.45</td>
+</tr>
+<tr>
+<td class="nowrap">20</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.11</td>
+</tr>
+<tr>
+<td class="nowrap">22</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.63</td>
+</tr>
+<tr>
+<td class="nowrap">25</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.21</td>
+</tr>
+<tr>
+<td class="nowrap">27</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.09</td>
+</tr>
+<tr>
+<td class="nowrap">30</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.08</td>
+</tr>
+<tr>
+<td class="nowrap">32</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">3.1</td>
+</tr>
+<tr>
+<td class="nowrap">35</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.1</td>
+</tr>
+<tr>
+<td class="nowrap">37</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.18</td>
+</tr>
+<tr>
+<td class="nowrap">40</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.1</td>
+</tr>
+<tr>
+<td class="nowrap">42</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.34</td>
+</tr>
+<tr>
+<td class="nowrap">45</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.1</td>
+</tr>
+<tr>
+<td class="nowrap">47</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.11</td>
+</tr>
+<tr>
+<td class="nowrap">50</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.48</td>
+</tr>
+<tr>
+<td class="nowrap">52</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.1</td>
+</tr>
+<tr>
+<td class="nowrap">55</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.12</td>
+</tr>
+<tr>
+<td class="nowrap">57</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.89</td>
+</tr>
+<tr>
+<td class="nowrap">59</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">3.78</td>
+</tr>
+<tr>
+<td class="nowrap">62</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">2.61</td>
+</tr>
+<tr>
+<td class="nowrap">65</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.04</td>
+</tr>
+<tr>
+<td class="nowrap">67</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.97</td>
+</tr>
+<tr>
+<td class="nowrap">70</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.35</td>
+</tr>
+<tr>
+<td class="nowrap">72</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.36</td>
+</tr>
+<tr>
+<td class="nowrap">75</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">3.61</td>
+</tr>
+<tr>
+<td class="nowrap">77</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.84</td>
+</tr>
+<tr>
+<td class="nowrap">80</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.17</td>
+</tr>
+<tr>
+<td class="nowrap">82</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.14</td>
+</tr>
+<tr>
+<td class="nowrap">85</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.8</td>
+</tr>
+</tbody></table></div>
+
+</details>
+
+<hr>
+
+<h3 id="pp-512-tg-256">pp=512 tg=256</h3>
+
+<div class="table-wrap"><table class="bench-table"><thead><tr>
+<th>model</th>
+<th>test</th>
+<th>t/s</th>
+<th>peak t/s</th>
+<th>ttfr (ms)</th>
+<th>est_ppt (ms)</th>
+<th>e2e_ttft (ms)</th>
+</tr></thead><tbody>
+<tr>
+<td class="model-name">gemma4:e4b</td>
+<td>pp512</td>
+<td class="nowrap">359.02 ± 11.65</td>
+<td class="nowrap"></td>
+<td class="nowrap">1442.14 ± 97.91</td>
+<td class="nowrap">1275.15 ± 97.91</td>
+<td class="nowrap">1442.14 ± 97.91</td>
+</tr>
+<tr>
+<td class="model-name">gemma4:e4b</td>
+<td>tg256</td>
+<td class="nowrap">26.41 ± 0.55</td>
+<td class="nowrap">29.00 ± 0.00</td>
+<td class="nowrap"></td>
+<td class="nowrap"></td>
+<td class="nowrap"></td>
+</tr>
+</tbody></table></div>
+
+<h4 id="temperatures-utilization">Temperatures &amp; Utilization</h4>
+
+<div class="mermaid" data-src="xychart-beta
+  title &quot;Temperature — pp=512 tg=256&quot;
+  x-axis &quot;Time (s)&quot; [0, 2, 7, 10, 15, 17, 22, 25, 30, 32, 37, 42, 45, 50, 52, 57, 60, 65, 67, 72, 77, 80, 84, 87, 92, 94, 99, 102, 107, 109, 114, 119, 122, 127, 129, 134, 137, 142, 145, 150]
+  y-axis &quot;W&quot; 0 --&gt; 7.470000000000001
+  line &quot;CPU W&quot; [0.53, 0.13, 0.22, 1.55, 0.53, 2.47, 1.23, 0.4, 0.29, 0.49, 1.87, 1.0, 0.32, 0.08, 0.42, 0.11, 0.15, 1.07, 0.1, 0.1, 1.13, 0.97, 1.91, 0.23, 0.12, 0.1, 0.45, 1.25, 0.31, 0.06, 0.08, 0.09, 0.1, 0.47, 0.68, 1.2, 0.77, 0.15, 0.53, 0.5]">xychart-beta
+  title &quot;Temperature — pp=512 tg=256&quot;
+  x-axis &quot;Time (s)&quot; [0, 2, 7, 10, 15, 17, 22, 25, 30, 32, 37, 42, 45, 50, 52, 57, 60, 65, 67, 72, 77, 80, 84, 87, 92, 94, 99, 102, 107, 109, 114, 119, 122, 127, 129, 134, 137, 142, 145, 150]
+  y-axis &quot;W&quot; 0 --&gt; 7.470000000000001
+  line &quot;CPU W&quot; [0.53, 0.13, 0.22, 1.55, 0.53, 2.47, 1.23, 0.4, 0.29, 0.49, 1.87, 1.0, 0.32, 0.08, 0.42, 0.11, 0.15, 1.07, 0.1, 0.1, 1.13, 0.97, 1.91, 0.23, 0.12, 0.1, 0.45, 1.25, 0.31, 0.06, 0.08, 0.09, 0.1, 0.47, 0.68, 1.2, 0.77, 0.15, 0.53, 0.5]</div>
+
+<details><summary>Raw readings</summary>
+
+<div class="table-wrap"><table class="bench-table"><thead><tr>
+<th>Time (s)</th>
+<th>GPU °C</th>
+<th>GPU util %</th>
+<th>GPU W</th>
+<th>CPU °C</th>
+</tr></thead><tbody>
+<tr>
+<td class="nowrap">0</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.53</td>
+</tr>
+<tr>
+<td class="nowrap">2</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.13</td>
+</tr>
+<tr>
+<td class="nowrap">5</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.98</td>
+</tr>
+<tr>
+<td class="nowrap">7</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.22</td>
+</tr>
+<tr>
+<td class="nowrap">10</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.55</td>
+</tr>
+<tr>
+<td class="nowrap">12</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.39</td>
+</tr>
+<tr>
+<td class="nowrap">15</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.53</td>
+</tr>
+<tr>
+<td class="nowrap">17</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">2.47</td>
+</tr>
+<tr>
+<td class="nowrap">20</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.17</td>
+</tr>
+<tr>
+<td class="nowrap">22</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.23</td>
+</tr>
+<tr>
+<td class="nowrap">25</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.4</td>
+</tr>
+<tr>
+<td class="nowrap">27</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.27</td>
+</tr>
+<tr>
+<td class="nowrap">30</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.29</td>
+</tr>
+<tr>
+<td class="nowrap">32</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.49</td>
+</tr>
+<tr>
+<td class="nowrap">35</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.1</td>
+</tr>
+<tr>
+<td class="nowrap">37</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.87</td>
+</tr>
+<tr>
+<td class="nowrap">40</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.55</td>
+</tr>
+<tr>
+<td class="nowrap">42</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.0</td>
+</tr>
+<tr>
+<td class="nowrap">45</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.32</td>
+</tr>
+<tr>
+<td class="nowrap">47</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.35</td>
+</tr>
+<tr>
+<td class="nowrap">50</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.08</td>
+</tr>
+<tr>
+<td class="nowrap">52</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.42</td>
+</tr>
+<tr>
+<td class="nowrap">55</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.13</td>
+</tr>
+<tr>
+<td class="nowrap">57</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.11</td>
+</tr>
+<tr>
+<td class="nowrap">60</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.15</td>
+</tr>
+<tr>
+<td class="nowrap">62</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.32</td>
+</tr>
+<tr>
+<td class="nowrap">65</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.07</td>
+</tr>
+<tr>
+<td class="nowrap">67</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.1</td>
+</tr>
+<tr>
+<td class="nowrap">70</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.45</td>
+</tr>
+<tr>
+<td class="nowrap">72</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.1</td>
+</tr>
+<tr>
+<td class="nowrap">75</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.78</td>
+</tr>
+<tr>
+<td class="nowrap">77</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.13</td>
+</tr>
+<tr>
+<td class="nowrap">80</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.97</td>
+</tr>
+<tr>
+<td class="nowrap">82</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.21</td>
+</tr>
+<tr>
+<td class="nowrap">84</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.91</td>
+</tr>
+<tr>
+<td class="nowrap">87</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.23</td>
+</tr>
+<tr>
+<td class="nowrap">89</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.25</td>
+</tr>
+<tr>
+<td class="nowrap">92</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.12</td>
+</tr>
+<tr>
+<td class="nowrap">94</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.1</td>
+</tr>
+<tr>
+<td class="nowrap">97</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">2.06</td>
+</tr>
+<tr>
+<td class="nowrap">99</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.45</td>
+</tr>
+<tr>
+<td class="nowrap">102</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.25</td>
+</tr>
+<tr>
+<td class="nowrap">104</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.39</td>
+</tr>
+<tr>
+<td class="nowrap">107</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.31</td>
+</tr>
+<tr>
+<td class="nowrap">109</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.06</td>
+</tr>
+<tr>
+<td class="nowrap">112</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.14</td>
+</tr>
+<tr>
+<td class="nowrap">114</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.08</td>
+</tr>
+<tr>
+<td class="nowrap">117</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">4.68</td>
+</tr>
+<tr>
+<td class="nowrap">119</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.09</td>
+</tr>
+<tr>
+<td class="nowrap">122</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.1</td>
+</tr>
+<tr>
+<td class="nowrap">124</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.46</td>
+</tr>
+<tr>
+<td class="nowrap">127</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.47</td>
+</tr>
+<tr>
+<td class="nowrap">129</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.68</td>
+</tr>
+<tr>
+<td class="nowrap">132</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.07</td>
+</tr>
+<tr>
+<td class="nowrap">134</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.2</td>
+</tr>
+<tr>
+<td class="nowrap">137</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.77</td>
+</tr>
+<tr>
+<td class="nowrap">139</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.84</td>
+</tr>
+<tr>
+<td class="nowrap">142</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.15</td>
+</tr>
+<tr>
+<td class="nowrap">145</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.53</td>
+</tr>
+<tr>
+<td class="nowrap">147</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.81</td>
+</tr>
+<tr>
+<td class="nowrap">150</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.5</td>
+</tr>
+<tr>
+<td class="nowrap">152</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">2.2</td>
+</tr>
+</tbody></table></div>
+
+</details>
+
+<hr>
+
+<h3 id="pp-2048-tg-64">pp=2048 tg=64</h3>
+
+<div class="table-wrap"><table class="bench-table"><thead><tr>
+<th>model</th>
+<th>test</th>
+<th>t/s</th>
+<th>peak t/s</th>
+<th>ttfr (ms)</th>
+<th>est_ppt (ms)</th>
+<th>e2e_ttft (ms)</th>
+</tr></thead><tbody>
+<tr>
+<td class="model-name">gemma4:e4b</td>
+<td>pp2048</td>
+<td class="nowrap">361.23 ± 2.19</td>
+<td class="nowrap"></td>
+<td class="nowrap">5350.97 ± 144.32</td>
+<td class="nowrap">5178.83 ± 144.32</td>
+<td class="nowrap">5350.97 ± 144.32</td>
+</tr>
+<tr>
+<td class="model-name">gemma4:e4b</td>
+<td>tg64</td>
+<td class="nowrap">26.49 ± 0.36</td>
+<td class="nowrap">29.00 ± 0.00</td>
+<td class="nowrap"></td>
+<td class="nowrap"></td>
+<td class="nowrap"></td>
+</tr>
+</tbody></table></div>
+
+<h4 id="temperatures-utilization">Temperatures &amp; Utilization</h4>
+
+<div class="mermaid" data-src="xychart-beta
+  title &quot;Temperature — pp=2048 tg=64&quot;
+  x-axis &quot;Time (s)&quot; [0, 2, 5, 7, 12, 15, 17, 20, 25, 27, 30, 35, 37, 40, 42, 47, 50, 52, 55, 60, 62, 65, 70, 72, 75, 77, 82, 85, 87, 90, 95, 97, 100, 105, 107, 110, 112, 117, 120, 122]
+  y-axis &quot;W&quot; 0 --&gt; 7.32
+  line &quot;CPU W&quot; [1.49, 0.28, 1.24, 0.09, 0.74, 0.78, 0.44, 0.93, 0.4, 0.11, 0.12, 0.12, 1.25, 2.32, 0.98, 1.42, 0.11, 1.8, 0.1, 0.1, 0.14, 0.1, 0.11, 0.37, 1.18, 0.08, 0.4, 0.96, 0.18, 0.3, 0.77, 0.86, 0.16, 0.1, 0.36, 0.41, 1.05, 1.39, 0.06, 1.06]">xychart-beta
+  title &quot;Temperature — pp=2048 tg=64&quot;
+  x-axis &quot;Time (s)&quot; [0, 2, 5, 7, 12, 15, 17, 20, 25, 27, 30, 35, 37, 40, 42, 47, 50, 52, 55, 60, 62, 65, 70, 72, 75, 77, 82, 85, 87, 90, 95, 97, 100, 105, 107, 110, 112, 117, 120, 122]
+  y-axis &quot;W&quot; 0 --&gt; 7.32
+  line &quot;CPU W&quot; [1.49, 0.28, 1.24, 0.09, 0.74, 0.78, 0.44, 0.93, 0.4, 0.11, 0.12, 0.12, 1.25, 2.32, 0.98, 1.42, 0.11, 1.8, 0.1, 0.1, 0.14, 0.1, 0.11, 0.37, 1.18, 0.08, 0.4, 0.96, 0.18, 0.3, 0.77, 0.86, 0.16, 0.1, 0.36, 0.41, 1.05, 1.39, 0.06, 1.06]</div>
+
+<details><summary>Raw readings</summary>
+
+<div class="table-wrap"><table class="bench-table"><thead><tr>
+<th>Time (s)</th>
+<th>GPU °C</th>
+<th>GPU util %</th>
+<th>GPU W</th>
+<th>CPU °C</th>
+</tr></thead><tbody>
+<tr>
+<td class="nowrap">0</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.49</td>
+</tr>
+<tr>
+<td class="nowrap">2</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.28</td>
+</tr>
+<tr>
+<td class="nowrap">5</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.24</td>
+</tr>
+<tr>
+<td class="nowrap">7</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.09</td>
+</tr>
+<tr>
+<td class="nowrap">10</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.61</td>
+</tr>
+<tr>
+<td class="nowrap">12</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.74</td>
+</tr>
+<tr>
+<td class="nowrap">15</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.78</td>
+</tr>
+<tr>
+<td class="nowrap">17</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.44</td>
+</tr>
+<tr>
+<td class="nowrap">20</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.93</td>
+</tr>
+<tr>
+<td class="nowrap">22</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.18</td>
+</tr>
+<tr>
+<td class="nowrap">25</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.4</td>
+</tr>
+<tr>
+<td class="nowrap">27</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.11</td>
+</tr>
+<tr>
+<td class="nowrap">30</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.12</td>
+</tr>
+<tr>
+<td class="nowrap">32</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.13</td>
+</tr>
+<tr>
+<td class="nowrap">35</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.12</td>
+</tr>
+<tr>
+<td class="nowrap">37</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.25</td>
+</tr>
+<tr>
+<td class="nowrap">40</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">2.32</td>
+</tr>
+<tr>
+<td class="nowrap">42</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.98</td>
+</tr>
+<tr>
+<td class="nowrap">45</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.47</td>
+</tr>
+<tr>
+<td class="nowrap">47</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.42</td>
+</tr>
+<tr>
+<td class="nowrap">50</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.11</td>
+</tr>
+<tr>
+<td class="nowrap">52</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.8</td>
+</tr>
+<tr>
+<td class="nowrap">55</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.1</td>
+</tr>
+<tr>
+<td class="nowrap">57</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.5</td>
+</tr>
+<tr>
+<td class="nowrap">60</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.1</td>
+</tr>
+<tr>
+<td class="nowrap">62</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.14</td>
+</tr>
+<tr>
+<td class="nowrap">65</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.1</td>
+</tr>
+<tr>
+<td class="nowrap">67</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.14</td>
+</tr>
+<tr>
+<td class="nowrap">70</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.11</td>
+</tr>
+<tr>
+<td class="nowrap">72</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.37</td>
+</tr>
+<tr>
+<td class="nowrap">75</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.18</td>
+</tr>
+<tr>
+<td class="nowrap">77</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.08</td>
+</tr>
+<tr>
+<td class="nowrap">80</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.32</td>
+</tr>
+<tr>
+<td class="nowrap">82</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.4</td>
+</tr>
+<tr>
+<td class="nowrap">85</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.96</td>
+</tr>
+<tr>
+<td class="nowrap">87</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.18</td>
+</tr>
+<tr>
+<td class="nowrap">90</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.3</td>
+</tr>
+<tr>
+<td class="nowrap">92</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.38</td>
+</tr>
+<tr>
+<td class="nowrap">95</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.77</td>
+</tr>
+<tr>
+<td class="nowrap">97</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.86</td>
+</tr>
+<tr>
+<td class="nowrap">100</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.16</td>
+</tr>
+<tr>
+<td class="nowrap">102</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">3.04</td>
+</tr>
+<tr>
+<td class="nowrap">105</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.1</td>
+</tr>
+<tr>
+<td class="nowrap">107</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.36</td>
+</tr>
+<tr>
+<td class="nowrap">110</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.41</td>
+</tr>
+<tr>
+<td class="nowrap">112</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.05</td>
+</tr>
+<tr>
+<td class="nowrap">115</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.06</td>
+</tr>
+<tr>
+<td class="nowrap">117</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.39</td>
+</tr>
+<tr>
+<td class="nowrap">120</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.06</td>
+</tr>
+<tr>
+<td class="nowrap">122</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.06</td>
+</tr>
+<tr>
+<td class="nowrap">125</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.61</td>
+</tr>
+</tbody></table></div>
+
+</details>
+
+<hr>
+
+<h3 id="pp-2048-tg-256">pp=2048 tg=256</h3>
+
+<div class="table-wrap"><table class="bench-table"><thead><tr>
+<th>model</th>
+<th>test</th>
+<th>t/s</th>
+<th>peak t/s</th>
+<th>ttfr (ms)</th>
+<th>est_ppt (ms)</th>
+<th>e2e_ttft (ms)</th>
+</tr></thead><tbody>
+<tr>
+<td class="model-name">gemma4:e4b</td>
+<td>pp2048</td>
+<td class="nowrap">362.42 ± 2.78</td>
+<td class="nowrap"></td>
+<td class="nowrap">5236.67 ± 105.35</td>
+<td class="nowrap">5070.70 ± 105.35</td>
+<td class="nowrap">5236.67 ± 105.35</td>
+</tr>
+<tr>
+<td class="model-name">gemma4:e4b</td>
+<td>tg256</td>
+<td class="nowrap">26.03 ± 0.31</td>
+<td class="nowrap">29.00 ± 0.00</td>
+<td class="nowrap"></td>
+<td class="nowrap"></td>
+<td class="nowrap"></td>
+</tr>
+</tbody></table></div>
+
+<h4 id="temperatures-utilization">Temperatures &amp; Utilization</h4>
+
+<div class="mermaid" data-src="xychart-beta
+  title &quot;Temperature — pp=2048 tg=256&quot;
+  x-axis &quot;Time (s)&quot; [0, 2, 5, 10, 12, 17, 20, 22, 27, 30, 35, 37, 40, 45, 47, 52, 55, 57, 62, 65, 70, 72, 75, 80, 82, 87, 90, 92, 97, 100, 105, 107, 110, 115, 117, 123, 125, 128, 133, 135]
+  y-axis &quot;W&quot; 0 --&gt; 9.93
+  line &quot;CPU W&quot; [0.14, 1.29, 0.3, 0.99, 0.84, 1.5, 0.46, 1.31, 1.88, 0.14, 0.11, 0.31, 1.07, 1.2, 2.04, 0.12, 1.41, 0.25, 0.09, 1.66, 0.17, 0.11, 0.12, 0.11, 0.97, 1.96, 0.16, 4.93, 1.19, 0.14, 0.48, 1.72, 0.05, 1.6, 1.58, 0.78, 0.61, 0.06, 0.39, 1.9]">xychart-beta
+  title &quot;Temperature — pp=2048 tg=256&quot;
+  x-axis &quot;Time (s)&quot; [0, 2, 5, 10, 12, 17, 20, 22, 27, 30, 35, 37, 40, 45, 47, 52, 55, 57, 62, 65, 70, 72, 75, 80, 82, 87, 90, 92, 97, 100, 105, 107, 110, 115, 117, 123, 125, 128, 133, 135]
+  y-axis &quot;W&quot; 0 --&gt; 9.93
+  line &quot;CPU W&quot; [0.14, 1.29, 0.3, 0.99, 0.84, 1.5, 0.46, 1.31, 1.88, 0.14, 0.11, 0.31, 1.07, 1.2, 2.04, 0.12, 1.41, 0.25, 0.09, 1.66, 0.17, 0.11, 0.12, 0.11, 0.97, 1.96, 0.16, 4.93, 1.19, 0.14, 0.48, 1.72, 0.05, 1.6, 1.58, 0.78, 0.61, 0.06, 0.39, 1.9]</div>
+
+<details><summary>Raw readings</summary>
+
+<div class="table-wrap"><table class="bench-table"><thead><tr>
+<th>Time (s)</th>
+<th>GPU °C</th>
+<th>GPU util %</th>
+<th>GPU W</th>
+<th>CPU °C</th>
+</tr></thead><tbody>
+<tr>
+<td class="nowrap">0</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.14</td>
+</tr>
+<tr>
+<td class="nowrap">2</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.29</td>
+</tr>
+<tr>
+<td class="nowrap">5</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.3</td>
+</tr>
+<tr>
+<td class="nowrap">7</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.22</td>
+</tr>
+<tr>
+<td class="nowrap">10</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.99</td>
+</tr>
+<tr>
+<td class="nowrap">12</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.84</td>
+</tr>
+<tr>
+<td class="nowrap">15</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.8</td>
+</tr>
+<tr>
+<td class="nowrap">17</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.5</td>
+</tr>
+<tr>
+<td class="nowrap">20</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.46</td>
+</tr>
+<tr>
+<td class="nowrap">22</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.31</td>
+</tr>
+<tr>
+<td class="nowrap">25</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.1</td>
+</tr>
+<tr>
+<td class="nowrap">27</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.88</td>
+</tr>
+<tr>
+<td class="nowrap">30</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.14</td>
+</tr>
+<tr>
+<td class="nowrap">32</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.52</td>
+</tr>
+<tr>
+<td class="nowrap">35</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.11</td>
+</tr>
+<tr>
+<td class="nowrap">37</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.31</td>
+</tr>
+<tr>
+<td class="nowrap">40</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.07</td>
+</tr>
+<tr>
+<td class="nowrap">42</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.21</td>
+</tr>
+<tr>
+<td class="nowrap">45</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.2</td>
+</tr>
+<tr>
+<td class="nowrap">47</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">2.04</td>
+</tr>
+<tr>
+<td class="nowrap">50</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.89</td>
+</tr>
+<tr>
+<td class="nowrap">52</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.12</td>
+</tr>
+<tr>
+<td class="nowrap">55</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.41</td>
+</tr>
+<tr>
+<td class="nowrap">57</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.25</td>
+</tr>
+<tr>
+<td class="nowrap">60</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.05</td>
+</tr>
+<tr>
+<td class="nowrap">62</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.09</td>
+</tr>
+<tr>
+<td class="nowrap">65</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.66</td>
+</tr>
+<tr>
+<td class="nowrap">67</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.13</td>
+</tr>
+<tr>
+<td class="nowrap">70</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.17</td>
+</tr>
+<tr>
+<td class="nowrap">72</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.11</td>
+</tr>
+<tr>
+<td class="nowrap">75</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.12</td>
+</tr>
+<tr>
+<td class="nowrap">77</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.1</td>
+</tr>
+<tr>
+<td class="nowrap">80</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.11</td>
+</tr>
+<tr>
+<td class="nowrap">82</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.97</td>
+</tr>
+<tr>
+<td class="nowrap">85</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.09</td>
+</tr>
+<tr>
+<td class="nowrap">87</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.96</td>
+</tr>
+<tr>
+<td class="nowrap">90</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.16</td>
+</tr>
+<tr>
+<td class="nowrap">92</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">4.93</td>
+</tr>
+<tr>
+<td class="nowrap">95</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.13</td>
+</tr>
+<tr>
+<td class="nowrap">97</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.19</td>
+</tr>
+<tr>
+<td class="nowrap">100</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.14</td>
+</tr>
+<tr>
+<td class="nowrap">102</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">2.08</td>
+</tr>
+<tr>
+<td class="nowrap">105</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.48</td>
+</tr>
+<tr>
+<td class="nowrap">107</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.72</td>
+</tr>
+<tr>
+<td class="nowrap">110</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.05</td>
+</tr>
+<tr>
+<td class="nowrap">112</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.01</td>
+</tr>
+<tr>
+<td class="nowrap">115</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.6</td>
+</tr>
+<tr>
+<td class="nowrap">117</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.58</td>
+</tr>
+<tr>
+<td class="nowrap">120</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.71</td>
+</tr>
+<tr>
+<td class="nowrap">123</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.78</td>
+</tr>
+<tr>
+<td class="nowrap">125</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.61</td>
+</tr>
+<tr>
+<td class="nowrap">128</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.06</td>
+</tr>
+<tr>
+<td class="nowrap">130</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.11</td>
+</tr>
+<tr>
+<td class="nowrap">133</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.39</td>
+</tr>
+<tr>
+<td class="nowrap">135</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.9</td>
+</tr>
+<tr>
+<td class="nowrap">138</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.07</td>
+</tr>
+</tbody></table></div>
+
+</details>
+
+<hr>
+
+</details></section>
+<section id="model-qwen3-8b" class="model-section">
+<details><summary class="model-header"><h2>Benchmark Report: qwen3:8b</h2></summary>
+
+<p><strong>Date:</strong> 2026-04-19 14:33</p>
+<p><strong>Machine:</strong> Apple M4, 16GB unified memory, macOS</p>
+<p><strong>Endpoint:</strong> http://localhost:11434/v1</p>
+<p><strong>Run platform:</strong> Darwin arm64</p>
+<p><strong>Runs per test:</strong> 3</p>
+
+<hr>
+
+<h3 id="summary">Summary</h3>
+
+<div class="table-wrap"><table class="bench-table"><thead><tr>
+<th>pp</th>
+<th>tg</th>
+<th>Duration (s)</th>
+<th>GPU peak °C</th>
+<th>CPU peak °C</th>
+</tr></thead><tbody>
+<tr>
+<td class="nowrap">512</td>
+<td class="nowrap">64</td>
+<td class="nowrap">86</td>
+<td class="nowrap">0</td>
+<td class="nowrap">3.0</td>
+</tr>
+<tr>
+<td class="nowrap">512</td>
+<td class="nowrap">256</td>
+<td class="nowrap">69</td>
+<td class="nowrap">0</td>
+<td class="nowrap">3.61</td>
+</tr>
+<tr>
+<td class="nowrap">2048</td>
+<td class="nowrap">64</td>
+<td class="nowrap">39</td>
+<td class="nowrap">0</td>
+<td class="nowrap">2.89</td>
+</tr>
+<tr>
+<td class="nowrap">2048</td>
+<td class="nowrap">256</td>
+<td class="nowrap">71</td>
+<td class="nowrap">0</td>
+<td class="nowrap">5.57</td>
+</tr>
+</tbody></table></div>
+
+<hr>
+
+<h3 id="pp-512-tg-64">pp=512 tg=64</h3>
+
+<div class="table-wrap"><table class="bench-table"><thead><tr>
+<th>model</th>
+<th>test</th>
+<th>t/s</th>
+<th>peak t/s</th>
+<th>ttfr (ms)</th>
+<th>est_ppt (ms)</th>
+<th>e2e_ttft (ms)</th>
+</tr></thead><tbody>
+<tr>
+<td class="model-name">qwen3:8b</td>
+<td>pp512</td>
+<td class="nowrap">228.02 ± 1.28</td>
+<td class="nowrap"></td>
+<td class="nowrap">2324.00 ± 123.04</td>
+<td class="nowrap">2105.82 ± 123.04</td>
+<td class="nowrap">2324.00 ± 123.04</td>
+</tr>
+<tr>
+<td class="model-name">qwen3:8b</td>
+<td>tg64</td>
+<td class="nowrap">19.50 ± 0.06</td>
+<td class="nowrap">20.00 ± 0.00</td>
+<td class="nowrap"></td>
+<td class="nowrap"></td>
+<td class="nowrap"></td>
+</tr>
+</tbody></table></div>
+
+<h4 id="temperatures-utilization">Temperatures &amp; Utilization</h4>
+
+<div class="mermaid" data-src="xychart-beta
+  title &quot;Temperature — pp=512 tg=64&quot;
+  x-axis &quot;Time (s)&quot; [0, 3, 5, 7, 10, 12, 15, 17, 20, 22, 25, 27, 30, 32, 35, 37, 40, 42, 45, 47, 50, 52, 55, 57, 59, 62, 64, 67, 70, 72, 75, 77, 80, 82, 85]
+  y-axis &quot;W&quot; 0 --&gt; 8.0
+  line &quot;CPU W&quot; [0.31, 1.32, 0.67, 0.9, 0.35, 0.22, 0.25, 0.55, 0.12, 0.24, 0.68, 0.09, 1.74, 0.12, 2.96, 0.11, 1.43, 0.32, 0.11, 1.14, 0.11, 0.9, 0.94, 1.22, 2.49, 1.71, 0.69, 3.0, 0.06, 1.86, 1.77, 2.44, 0.29, 1.27, 0.37]">xychart-beta
+  title &quot;Temperature — pp=512 tg=64&quot;
+  x-axis &quot;Time (s)&quot; [0, 3, 5, 7, 10, 12, 15, 17, 20, 22, 25, 27, 30, 32, 35, 37, 40, 42, 45, 47, 50, 52, 55, 57, 59, 62, 64, 67, 70, 72, 75, 77, 80, 82, 85]
+  y-axis &quot;W&quot; 0 --&gt; 8.0
+  line &quot;CPU W&quot; [0.31, 1.32, 0.67, 0.9, 0.35, 0.22, 0.25, 0.55, 0.12, 0.24, 0.68, 0.09, 1.74, 0.12, 2.96, 0.11, 1.43, 0.32, 0.11, 1.14, 0.11, 0.9, 0.94, 1.22, 2.49, 1.71, 0.69, 3.0, 0.06, 1.86, 1.77, 2.44, 0.29, 1.27, 0.37]</div>
+
+<details><summary>Raw readings</summary>
+
+<div class="table-wrap"><table class="bench-table"><thead><tr>
+<th>Time (s)</th>
+<th>GPU °C</th>
+<th>GPU util %</th>
+<th>GPU W</th>
+<th>CPU °C</th>
+</tr></thead><tbody>
+<tr>
+<td class="nowrap">0</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.31</td>
+</tr>
+<tr>
+<td class="nowrap">3</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.32</td>
+</tr>
+<tr>
+<td class="nowrap">5</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.67</td>
+</tr>
+<tr>
+<td class="nowrap">7</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.9</td>
+</tr>
+<tr>
+<td class="nowrap">10</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.35</td>
+</tr>
+<tr>
+<td class="nowrap">12</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.22</td>
+</tr>
+<tr>
+<td class="nowrap">15</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.25</td>
+</tr>
+<tr>
+<td class="nowrap">17</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.55</td>
+</tr>
+<tr>
+<td class="nowrap">20</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.12</td>
+</tr>
+<tr>
+<td class="nowrap">22</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.24</td>
+</tr>
+<tr>
+<td class="nowrap">25</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.68</td>
+</tr>
+<tr>
+<td class="nowrap">27</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.09</td>
+</tr>
+<tr>
+<td class="nowrap">30</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.74</td>
+</tr>
+<tr>
+<td class="nowrap">32</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.12</td>
+</tr>
+<tr>
+<td class="nowrap">35</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">2.96</td>
+</tr>
+<tr>
+<td class="nowrap">37</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.11</td>
+</tr>
+<tr>
+<td class="nowrap">40</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.43</td>
+</tr>
+<tr>
+<td class="nowrap">42</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.32</td>
+</tr>
+<tr>
+<td class="nowrap">45</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.11</td>
+</tr>
+<tr>
+<td class="nowrap">47</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.14</td>
+</tr>
+<tr>
+<td class="nowrap">50</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.11</td>
+</tr>
+<tr>
+<td class="nowrap">52</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.9</td>
+</tr>
+<tr>
+<td class="nowrap">55</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.94</td>
+</tr>
+<tr>
+<td class="nowrap">57</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.22</td>
+</tr>
+<tr>
+<td class="nowrap">59</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">2.49</td>
+</tr>
+<tr>
+<td class="nowrap">62</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.71</td>
+</tr>
+<tr>
+<td class="nowrap">64</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.69</td>
+</tr>
+<tr>
+<td class="nowrap">67</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">3.0</td>
+</tr>
+<tr>
+<td class="nowrap">70</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.06</td>
+</tr>
+<tr>
+<td class="nowrap">72</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.86</td>
+</tr>
+<tr>
+<td class="nowrap">75</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.77</td>
+</tr>
+<tr>
+<td class="nowrap">77</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">2.44</td>
+</tr>
+<tr>
+<td class="nowrap">80</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.29</td>
+</tr>
+<tr>
+<td class="nowrap">82</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.27</td>
+</tr>
+<tr>
+<td class="nowrap">85</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.37</td>
+</tr>
+</tbody></table></div>
+
+</details>
+
+<hr>
+
+<h3 id="pp-512-tg-256">pp=512 tg=256</h3>
+
+<div class="table-wrap"><table class="bench-table"><thead><tr>
+<th>model</th>
+<th>test</th>
+<th>t/s</th>
+<th>peak t/s</th>
+<th>ttfr (ms)</th>
+<th>est_ppt (ms)</th>
+<th>e2e_ttft (ms)</th>
+</tr></thead><tbody>
+<tr>
+<td class="model-name">qwen3:8b</td>
+<td>pp512</td>
+<td class="nowrap">220.47 ± 4.97</td>
+<td class="nowrap"></td>
+<td class="nowrap">2218.95 ± 174.52</td>
+<td class="nowrap">2075.32 ± 174.52</td>
+<td class="nowrap">2218.95 ± 174.52</td>
+</tr>
+<tr>
+<td class="model-name">qwen3:8b</td>
+<td>tg256</td>
+<td class="nowrap">19.52 ± 0.03</td>
+<td class="nowrap">20.00 ± 0.00</td>
+<td class="nowrap"></td>
+<td class="nowrap"></td>
+<td class="nowrap"></td>
+</tr>
+</tbody></table></div>
+
+<h4 id="temperatures-utilization">Temperatures &amp; Utilization</h4>
+
+<div class="mermaid" data-src="xychart-beta
+  title &quot;Temperature — pp=512 tg=256&quot;
+  x-axis &quot;Time (s)&quot; [0, 3, 5, 7, 10, 12, 15, 17, 20, 22, 25, 27, 30, 33, 35, 38, 40, 43, 45, 48, 50, 53, 55, 58, 60, 63, 65, 68]
+  y-axis &quot;W&quot; 0 --&gt; 8.61
+  line &quot;CPU W&quot; [1.47, 0.21, 2.85, 0.35, 3.61, 0.45, 0.2, 0.96, 0.47, 2.18, 0.26, 1.15, 0.63, 0.66, 0.37, 0.79, 0.27, 0.98, 0.29, 1.35, 0.52, 2.48, 0.61, 0.47, 0.58, 0.34, 0.79, 0.97]">xychart-beta
+  title &quot;Temperature — pp=512 tg=256&quot;
+  x-axis &quot;Time (s)&quot; [0, 3, 5, 7, 10, 12, 15, 17, 20, 22, 25, 27, 30, 33, 35, 38, 40, 43, 45, 48, 50, 53, 55, 58, 60, 63, 65, 68]
+  y-axis &quot;W&quot; 0 --&gt; 8.61
+  line &quot;CPU W&quot; [1.47, 0.21, 2.85, 0.35, 3.61, 0.45, 0.2, 0.96, 0.47, 2.18, 0.26, 1.15, 0.63, 0.66, 0.37, 0.79, 0.27, 0.98, 0.29, 1.35, 0.52, 2.48, 0.61, 0.47, 0.58, 0.34, 0.79, 0.97]</div>
+
+<details><summary>Raw readings</summary>
+
+<div class="table-wrap"><table class="bench-table"><thead><tr>
+<th>Time (s)</th>
+<th>GPU °C</th>
+<th>GPU util %</th>
+<th>GPU W</th>
+<th>CPU °C</th>
+</tr></thead><tbody>
+<tr>
+<td class="nowrap">0</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.47</td>
+</tr>
+<tr>
+<td class="nowrap">3</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.21</td>
+</tr>
+<tr>
+<td class="nowrap">5</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">2.85</td>
+</tr>
+<tr>
+<td class="nowrap">7</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.35</td>
+</tr>
+<tr>
+<td class="nowrap">10</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">3.61</td>
+</tr>
+<tr>
+<td class="nowrap">12</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.45</td>
+</tr>
+<tr>
+<td class="nowrap">15</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.2</td>
+</tr>
+<tr>
+<td class="nowrap">17</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.96</td>
+</tr>
+<tr>
+<td class="nowrap">20</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.47</td>
+</tr>
+<tr>
+<td class="nowrap">22</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">2.18</td>
+</tr>
+<tr>
+<td class="nowrap">25</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.26</td>
+</tr>
+<tr>
+<td class="nowrap">27</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.15</td>
+</tr>
+<tr>
+<td class="nowrap">30</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.63</td>
+</tr>
+<tr>
+<td class="nowrap">33</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.66</td>
+</tr>
+<tr>
+<td class="nowrap">35</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.37</td>
+</tr>
+<tr>
+<td class="nowrap">38</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.79</td>
+</tr>
+<tr>
+<td class="nowrap">40</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.27</td>
+</tr>
+<tr>
+<td class="nowrap">43</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.98</td>
+</tr>
+<tr>
+<td class="nowrap">45</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.29</td>
+</tr>
+<tr>
+<td class="nowrap">48</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.35</td>
+</tr>
+<tr>
+<td class="nowrap">50</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.52</td>
+</tr>
+<tr>
+<td class="nowrap">53</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">2.48</td>
+</tr>
+<tr>
+<td class="nowrap">55</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.61</td>
+</tr>
+<tr>
+<td class="nowrap">58</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.47</td>
+</tr>
+<tr>
+<td class="nowrap">60</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.58</td>
+</tr>
+<tr>
+<td class="nowrap">63</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.34</td>
+</tr>
+<tr>
+<td class="nowrap">65</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.79</td>
+</tr>
+<tr>
+<td class="nowrap">68</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.97</td>
+</tr>
+</tbody></table></div>
+
+</details>
+
+<hr>
+
+<h3 id="pp-2048-tg-64">pp=2048 tg=64</h3>
+
+<div class="table-wrap"><table class="bench-table"><thead><tr>
+<th>model</th>
+<th>test</th>
+<th>t/s</th>
+<th>peak t/s</th>
+<th>ttfr (ms)</th>
+<th>est_ppt (ms)</th>
+<th>e2e_ttft (ms)</th>
+</tr></thead><tbody>
+<tr>
+<td class="model-name">qwen3:8b</td>
+<td>pp2048</td>
+<td class="nowrap">212.23 ± 1.00</td>
+<td class="nowrap"></td>
+<td class="nowrap">8728.89 ± 79.06</td>
+<td class="nowrap">8583.28 ± 79.06</td>
+<td class="nowrap">8728.89 ± 79.06</td>
+</tr>
+<tr>
+<td class="model-name">qwen3:8b</td>
+<td>tg64</td>
+<td class="nowrap">18.80 ± 0.02</td>
+<td class="nowrap">19.00 ± 0.00</td>
+<td class="nowrap"></td>
+<td class="nowrap"></td>
+<td class="nowrap"></td>
+</tr>
+</tbody></table></div>
+
+<h4 id="temperatures-utilization">Temperatures &amp; Utilization</h4>
+
+<div class="mermaid" data-src="xychart-beta
+  title &quot;Temperature — pp=2048 tg=64&quot;
+  x-axis &quot;Time (s)&quot; [0, 2, 5, 8, 10, 13, 15, 18, 20, 23, 25, 28, 30, 33, 35, 38]
+  y-axis &quot;W&quot; 0 --&gt; 7.890000000000001
+  line &quot;CPU W&quot; [2.89, 1.47, 1.56, 0.28, 1.69, 0.31, 0.79, 0.06, 0.86, 0.06, 1.15, 0.06, 1.3, 0.06, 1.68, 0.22]">xychart-beta
+  title &quot;Temperature — pp=2048 tg=64&quot;
+  x-axis &quot;Time (s)&quot; [0, 2, 5, 8, 10, 13, 15, 18, 20, 23, 25, 28, 30, 33, 35, 38]
+  y-axis &quot;W&quot; 0 --&gt; 7.890000000000001
+  line &quot;CPU W&quot; [2.89, 1.47, 1.56, 0.28, 1.69, 0.31, 0.79, 0.06, 0.86, 0.06, 1.15, 0.06, 1.3, 0.06, 1.68, 0.22]</div>
+
+<details><summary>Raw readings</summary>
+
+<div class="table-wrap"><table class="bench-table"><thead><tr>
+<th>Time (s)</th>
+<th>GPU °C</th>
+<th>GPU util %</th>
+<th>GPU W</th>
+<th>CPU °C</th>
+</tr></thead><tbody>
+<tr>
+<td class="nowrap">0</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">2.89</td>
+</tr>
+<tr>
+<td class="nowrap">2</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.47</td>
+</tr>
+<tr>
+<td class="nowrap">5</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.56</td>
+</tr>
+<tr>
+<td class="nowrap">8</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.28</td>
+</tr>
+<tr>
+<td class="nowrap">10</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.69</td>
+</tr>
+<tr>
+<td class="nowrap">13</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.31</td>
+</tr>
+<tr>
+<td class="nowrap">15</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.79</td>
+</tr>
+<tr>
+<td class="nowrap">18</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.06</td>
+</tr>
+<tr>
+<td class="nowrap">20</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.86</td>
+</tr>
+<tr>
+<td class="nowrap">23</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.06</td>
+</tr>
+<tr>
+<td class="nowrap">25</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.15</td>
+</tr>
+<tr>
+<td class="nowrap">28</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.06</td>
+</tr>
+<tr>
+<td class="nowrap">30</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.3</td>
+</tr>
+<tr>
+<td class="nowrap">33</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.06</td>
+</tr>
+<tr>
+<td class="nowrap">35</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.68</td>
+</tr>
+<tr>
+<td class="nowrap">38</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.22</td>
+</tr>
+</tbody></table></div>
+
+</details>
+
+<hr>
+
+<h3 id="pp-2048-tg-256">pp=2048 tg=256</h3>
+
+<div class="table-wrap"><table class="bench-table"><thead><tr>
+<th>model</th>
+<th>test</th>
+<th>t/s</th>
+<th>peak t/s</th>
+<th>ttfr (ms)</th>
+<th>est_ppt (ms)</th>
+<th>e2e_ttft (ms)</th>
+</tr></thead><tbody>
+<tr>
+<td class="model-name">qwen3:8b</td>
+<td>pp2048</td>
+<td class="nowrap">203.48 ± 3.94</td>
+<td class="nowrap"></td>
+<td class="nowrap">9253.40 ± 203.38</td>
+<td class="nowrap">9106.56 ± 203.38</td>
+<td class="nowrap">9253.40 ± 203.38</td>
+</tr>
+<tr>
+<td class="model-name">qwen3:8b</td>
+<td>tg256</td>
+<td class="nowrap">18.69 ± 0.03</td>
+<td class="nowrap">19.00 ± 0.00</td>
+<td class="nowrap"></td>
+<td class="nowrap"></td>
+<td class="nowrap"></td>
+</tr>
+</tbody></table></div>
+
+<h4 id="temperatures-utilization">Temperatures &amp; Utilization</h4>
+
+<div class="mermaid" data-src="xychart-beta
+  title &quot;Temperature — pp=2048 tg=256&quot;
+  x-axis &quot;Time (s)&quot; [0, 3, 5, 8, 10, 13, 15, 18, 20, 23, 25, 28, 30, 33, 35, 38, 40, 43, 45, 48, 51, 53, 56, 58, 61, 63, 66, 68, 71]
+  y-axis &quot;W&quot; 0 --&gt; 10.57
+  line &quot;CPU W&quot; [5.57, 0.06, 1.6, 1.03, 2.06, 1.06, 1.42, 0.99, 0.66, 0.77, 0.33, 0.41, 0.48, 0.06, 0.76, 0.23, 0.79, 0.34, 1.08, 0.05, 1.25, 0.06, 1.34, 0.53, 1.32, 0.28, 0.94, 0.31, 0.3]">xychart-beta
+  title &quot;Temperature — pp=2048 tg=256&quot;
+  x-axis &quot;Time (s)&quot; [0, 3, 5, 8, 10, 13, 15, 18, 20, 23, 25, 28, 30, 33, 35, 38, 40, 43, 45, 48, 51, 53, 56, 58, 61, 63, 66, 68, 71]
+  y-axis &quot;W&quot; 0 --&gt; 10.57
+  line &quot;CPU W&quot; [5.57, 0.06, 1.6, 1.03, 2.06, 1.06, 1.42, 0.99, 0.66, 0.77, 0.33, 0.41, 0.48, 0.06, 0.76, 0.23, 0.79, 0.34, 1.08, 0.05, 1.25, 0.06, 1.34, 0.53, 1.32, 0.28, 0.94, 0.31, 0.3]</div>
+
+<details><summary>Raw readings</summary>
+
+<div class="table-wrap"><table class="bench-table"><thead><tr>
+<th>Time (s)</th>
+<th>GPU °C</th>
+<th>GPU util %</th>
+<th>GPU W</th>
+<th>CPU °C</th>
+</tr></thead><tbody>
+<tr>
+<td class="nowrap">0</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">5.57</td>
+</tr>
+<tr>
+<td class="nowrap">3</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.06</td>
+</tr>
+<tr>
+<td class="nowrap">5</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.6</td>
+</tr>
+<tr>
+<td class="nowrap">8</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.03</td>
+</tr>
+<tr>
+<td class="nowrap">10</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">2.06</td>
+</tr>
+<tr>
+<td class="nowrap">13</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.06</td>
+</tr>
+<tr>
+<td class="nowrap">15</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.42</td>
+</tr>
+<tr>
+<td class="nowrap">18</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.99</td>
+</tr>
+<tr>
+<td class="nowrap">20</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.66</td>
+</tr>
+<tr>
+<td class="nowrap">23</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.77</td>
+</tr>
+<tr>
+<td class="nowrap">25</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.33</td>
+</tr>
+<tr>
+<td class="nowrap">28</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.41</td>
+</tr>
+<tr>
+<td class="nowrap">30</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.48</td>
+</tr>
+<tr>
+<td class="nowrap">33</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.06</td>
+</tr>
+<tr>
+<td class="nowrap">35</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.76</td>
+</tr>
+<tr>
+<td class="nowrap">38</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.23</td>
+</tr>
+<tr>
+<td class="nowrap">40</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.79</td>
+</tr>
+<tr>
+<td class="nowrap">43</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.34</td>
+</tr>
+<tr>
+<td class="nowrap">45</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.08</td>
+</tr>
+<tr>
+<td class="nowrap">48</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.05</td>
+</tr>
+<tr>
+<td class="nowrap">51</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.25</td>
+</tr>
+<tr>
+<td class="nowrap">53</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.06</td>
+</tr>
+<tr>
+<td class="nowrap">56</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.34</td>
+</tr>
+<tr>
+<td class="nowrap">58</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.53</td>
+</tr>
+<tr>
+<td class="nowrap">61</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.32</td>
+</tr>
+<tr>
+<td class="nowrap">63</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.28</td>
+</tr>
+<tr>
+<td class="nowrap">66</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.94</td>
+</tr>
+<tr>
+<td class="nowrap">68</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.31</td>
+</tr>
+<tr>
+<td class="nowrap">71</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.3</td>
+</tr>
+</tbody></table></div>
+
+</details>
+
+<hr>
+
+</details></section>
+<section id="model-qwen2-5-14b" class="model-section">
+<details><summary class="model-header"><h2>Benchmark Report: qwen2.5:14b</h2></summary>
+
+<p><strong>Date:</strong> 2026-04-19 15:16</p>
+<p><strong>Machine:</strong> Apple M4, 16GB unified memory, macOS</p>
+<p><strong>Endpoint:</strong> http://localhost:11434/v1</p>
+<p><strong>Run platform:</strong> Darwin arm64</p>
+<p><strong>Runs per test:</strong> 3</p>
+
+<hr>
+
+<h3 id="summary">Summary</h3>
+
+<div class="table-wrap"><table class="bench-table"><thead><tr>
+<th>pp</th>
+<th>tg</th>
+<th>Duration (s)</th>
+<th>GPU peak °C</th>
+<th>CPU peak °C</th>
+</tr></thead><tbody>
+<tr>
+<td class="nowrap">512</td>
+<td class="nowrap">64</td>
+<td class="nowrap">91</td>
+<td class="nowrap">0</td>
+<td class="nowrap">8.56</td>
+</tr>
+<tr>
+<td class="nowrap">512</td>
+<td class="nowrap">256</td>
+<td class="nowrap">155</td>
+<td class="nowrap">0</td>
+<td class="nowrap">4.16</td>
+</tr>
+<tr>
+<td class="nowrap">2048</td>
+<td class="nowrap">64</td>
+<td class="nowrap">128</td>
+<td class="nowrap">0</td>
+<td class="nowrap">2.96</td>
+</tr>
+<tr>
+<td class="nowrap">2048</td>
+<td class="nowrap">256</td>
+<td class="nowrap">170</td>
+<td class="nowrap">0</td>
+<td class="nowrap">5.2</td>
+</tr>
+</tbody></table></div>
+
+<hr>
+
+<h3 id="pp-512-tg-64">pp=512 tg=64</h3>
+
+<div class="table-wrap"><table class="bench-table"><thead><tr>
+<th>model</th>
+<th>test</th>
+<th>t/s</th>
+<th>peak t/s</th>
+<th>ttfr (ms)</th>
+<th>est_ppt (ms)</th>
+<th>e2e_ttft (ms)</th>
+</tr></thead><tbody>
+<tr>
+<td class="model-name">qwen2.5:14b</td>
+<td>pp512</td>
+<td class="nowrap">127.57 ± 0.85</td>
+<td class="nowrap"></td>
+<td class="nowrap">3860.89 ± 193.66</td>
+<td class="nowrap">3627.55 ± 193.66</td>
+<td class="nowrap">3860.89 ± 193.66</td>
+</tr>
+<tr>
+<td class="model-name">qwen2.5:14b</td>
+<td>tg64</td>
+<td class="nowrap">11.31 ± 0.03</td>
+<td class="nowrap">12.00 ± 0.00</td>
+<td class="nowrap"></td>
+<td class="nowrap"></td>
+<td class="nowrap"></td>
+</tr>
+</tbody></table></div>
+
+<h4 id="temperatures-utilization">Temperatures &amp; Utilization</h4>
+
+<div class="mermaid" data-src="xychart-beta
+  title &quot;Temperature — pp=512 tg=64&quot;
+  x-axis &quot;Time (s)&quot; [0, 3, 5, 8, 10, 13, 15, 18, 20, 23, 25, 28, 30, 33, 35, 38, 40, 42, 45, 47, 50, 52, 55, 57, 60, 62, 65, 67, 70, 72, 75, 77, 80, 82, 85, 88, 90]
+  y-axis &quot;W&quot; 0 --&gt; 13.56
+  line &quot;CPU W&quot; [7.21, 8.56, 7.04, 8.0, 0.11, 0.52, 0.11, 0.88, 0.95, 1.08, 0.16, 1.32, 0.09, 1.33, 0.07, 0.17, 0.09, 0.22, 0.77, 0.09, 1.77, 0.08, 1.38, 0.07, 0.28, 3.16, 0.15, 0.68, 0.3, 0.05, 0.2, 0.19, 0.55, 0.06, 0.73, 0.21, 1.93]">xychart-beta
+  title &quot;Temperature — pp=512 tg=64&quot;
+  x-axis &quot;Time (s)&quot; [0, 3, 5, 8, 10, 13, 15, 18, 20, 23, 25, 28, 30, 33, 35, 38, 40, 42, 45, 47, 50, 52, 55, 57, 60, 62, 65, 67, 70, 72, 75, 77, 80, 82, 85, 88, 90]
+  y-axis &quot;W&quot; 0 --&gt; 13.56
+  line &quot;CPU W&quot; [7.21, 8.56, 7.04, 8.0, 0.11, 0.52, 0.11, 0.88, 0.95, 1.08, 0.16, 1.32, 0.09, 1.33, 0.07, 0.17, 0.09, 0.22, 0.77, 0.09, 1.77, 0.08, 1.38, 0.07, 0.28, 3.16, 0.15, 0.68, 0.3, 0.05, 0.2, 0.19, 0.55, 0.06, 0.73, 0.21, 1.93]</div>
+
+<details><summary>Raw readings</summary>
+
+<div class="table-wrap"><table class="bench-table"><thead><tr>
+<th>Time (s)</th>
+<th>GPU °C</th>
+<th>GPU util %</th>
+<th>GPU W</th>
+<th>CPU °C</th>
+</tr></thead><tbody>
+<tr>
+<td class="nowrap">0</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">7.21</td>
+</tr>
+<tr>
+<td class="nowrap">3</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">8.56</td>
+</tr>
+<tr>
+<td class="nowrap">5</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">7.04</td>
+</tr>
+<tr>
+<td class="nowrap">8</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">8.0</td>
+</tr>
+<tr>
+<td class="nowrap">10</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.11</td>
+</tr>
+<tr>
+<td class="nowrap">13</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.52</td>
+</tr>
+<tr>
+<td class="nowrap">15</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.11</td>
+</tr>
+<tr>
+<td class="nowrap">18</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.88</td>
+</tr>
+<tr>
+<td class="nowrap">20</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.95</td>
+</tr>
+<tr>
+<td class="nowrap">23</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.08</td>
+</tr>
+<tr>
+<td class="nowrap">25</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.16</td>
+</tr>
+<tr>
+<td class="nowrap">28</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.32</td>
+</tr>
+<tr>
+<td class="nowrap">30</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.09</td>
+</tr>
+<tr>
+<td class="nowrap">33</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.33</td>
+</tr>
+<tr>
+<td class="nowrap">35</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.07</td>
+</tr>
+<tr>
+<td class="nowrap">38</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.17</td>
+</tr>
+<tr>
+<td class="nowrap">40</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.09</td>
+</tr>
+<tr>
+<td class="nowrap">42</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.22</td>
+</tr>
+<tr>
+<td class="nowrap">45</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.77</td>
+</tr>
+<tr>
+<td class="nowrap">47</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.09</td>
+</tr>
+<tr>
+<td class="nowrap">50</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.77</td>
+</tr>
+<tr>
+<td class="nowrap">52</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.08</td>
+</tr>
+<tr>
+<td class="nowrap">55</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.38</td>
+</tr>
+<tr>
+<td class="nowrap">57</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.07</td>
+</tr>
+<tr>
+<td class="nowrap">60</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.28</td>
+</tr>
+<tr>
+<td class="nowrap">62</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">3.16</td>
+</tr>
+<tr>
+<td class="nowrap">65</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.15</td>
+</tr>
+<tr>
+<td class="nowrap">67</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.68</td>
+</tr>
+<tr>
+<td class="nowrap">70</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.3</td>
+</tr>
+<tr>
+<td class="nowrap">72</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.05</td>
+</tr>
+<tr>
+<td class="nowrap">75</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.2</td>
+</tr>
+<tr>
+<td class="nowrap">77</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.19</td>
+</tr>
+<tr>
+<td class="nowrap">80</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.55</td>
+</tr>
+<tr>
+<td class="nowrap">82</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.06</td>
+</tr>
+<tr>
+<td class="nowrap">85</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.73</td>
+</tr>
+<tr>
+<td class="nowrap">88</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.21</td>
+</tr>
+<tr>
+<td class="nowrap">90</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.93</td>
+</tr>
+</tbody></table></div>
+
+</details>
+
+<hr>
+
+<h3 id="pp-512-tg-256">pp=512 tg=256</h3>
+
+<div class="table-wrap"><table class="bench-table"><thead><tr>
+<th>model</th>
+<th>test</th>
+<th>t/s</th>
+<th>peak t/s</th>
+<th>ttfr (ms)</th>
+<th>est_ppt (ms)</th>
+<th>e2e_ttft (ms)</th>
+</tr></thead><tbody>
+<tr>
+<td class="model-name">qwen2.5:14b</td>
+<td>pp512</td>
+<td class="nowrap">126.34 ± 1.41</td>
+<td class="nowrap"></td>
+<td class="nowrap">4022.19 ± 142.75</td>
+<td class="nowrap">3824.27 ± 142.75</td>
+<td class="nowrap">4022.19 ± 142.75</td>
+</tr>
+<tr>
+<td class="model-name">qwen2.5:14b</td>
+<td>tg256</td>
+<td class="nowrap">11.32 ± 0.02</td>
+<td class="nowrap">12.00 ± 0.00</td>
+<td class="nowrap"></td>
+<td class="nowrap"></td>
+<td class="nowrap"></td>
+</tr>
+</tbody></table></div>
+
+<h4 id="temperatures-utilization">Temperatures &amp; Utilization</h4>
+
+<div class="mermaid" data-src="xychart-beta
+  title &quot;Temperature — pp=512 tg=256&quot;
+  x-axis &quot;Time (s)&quot; [0, 2, 7, 10, 15, 17, 22, 25, 30, 32, 37, 42, 45, 50, 52, 57, 60, 65, 67, 72, 77, 80, 85, 87, 92, 95, 100, 102, 107, 110, 115, 120, 123, 128, 130, 135, 138, 143, 146, 151]
+  y-axis &quot;W&quot; 0 --&gt; 9.16
+  line &quot;CPU W&quot; [1.92, 0.24, 0.32, 0.52, 1.09, 0.33, 1.18, 0.11, 0.11, 1.09, 1.3, 0.35, 0.57, 0.1, 0.11, 0.88, 0.79, 1.39, 0.11, 1.74, 0.07, 3.35, 4.16, 0.18, 0.19, 1.51, 1.79, 0.07, 0.19, 1.66, 1.46, 1.29, 0.16, 0.14, 1.19, 0.67, 0.31, 0.13, 0.32, 0.28]">xychart-beta
+  title &quot;Temperature — pp=512 tg=256&quot;
+  x-axis &quot;Time (s)&quot; [0, 2, 7, 10, 15, 17, 22, 25, 30, 32, 37, 42, 45, 50, 52, 57, 60, 65, 67, 72, 77, 80, 85, 87, 92, 95, 100, 102, 107, 110, 115, 120, 123, 128, 130, 135, 138, 143, 146, 151]
+  y-axis &quot;W&quot; 0 --&gt; 9.16
+  line &quot;CPU W&quot; [1.92, 0.24, 0.32, 0.52, 1.09, 0.33, 1.18, 0.11, 0.11, 1.09, 1.3, 0.35, 0.57, 0.1, 0.11, 0.88, 0.79, 1.39, 0.11, 1.74, 0.07, 3.35, 4.16, 0.18, 0.19, 1.51, 1.79, 0.07, 0.19, 1.66, 1.46, 1.29, 0.16, 0.14, 1.19, 0.67, 0.31, 0.13, 0.32, 0.28]</div>
+
+<details><summary>Raw readings</summary>
+
+<div class="table-wrap"><table class="bench-table"><thead><tr>
+<th>Time (s)</th>
+<th>GPU °C</th>
+<th>GPU util %</th>
+<th>GPU W</th>
+<th>CPU °C</th>
+</tr></thead><tbody>
+<tr>
+<td class="nowrap">0</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.92</td>
+</tr>
+<tr>
+<td class="nowrap">2</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.24</td>
+</tr>
+<tr>
+<td class="nowrap">5</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.81</td>
+</tr>
+<tr>
+<td class="nowrap">7</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.32</td>
+</tr>
+<tr>
+<td class="nowrap">10</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.52</td>
+</tr>
+<tr>
+<td class="nowrap">12</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.32</td>
+</tr>
+<tr>
+<td class="nowrap">15</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.09</td>
+</tr>
+<tr>
+<td class="nowrap">17</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.33</td>
+</tr>
+<tr>
+<td class="nowrap">20</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.12</td>
+</tr>
+<tr>
+<td class="nowrap">22</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.18</td>
+</tr>
+<tr>
+<td class="nowrap">25</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.11</td>
+</tr>
+<tr>
+<td class="nowrap">27</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.47</td>
+</tr>
+<tr>
+<td class="nowrap">30</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.11</td>
+</tr>
+<tr>
+<td class="nowrap">32</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.09</td>
+</tr>
+<tr>
+<td class="nowrap">35</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.5</td>
+</tr>
+<tr>
+<td class="nowrap">37</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.3</td>
+</tr>
+<tr>
+<td class="nowrap">40</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.13</td>
+</tr>
+<tr>
+<td class="nowrap">42</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.35</td>
+</tr>
+<tr>
+<td class="nowrap">45</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.57</td>
+</tr>
+<tr>
+<td class="nowrap">47</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.29</td>
+</tr>
+<tr>
+<td class="nowrap">50</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.1</td>
+</tr>
+<tr>
+<td class="nowrap">52</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.11</td>
+</tr>
+<tr>
+<td class="nowrap">55</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.63</td>
+</tr>
+<tr>
+<td class="nowrap">57</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.88</td>
+</tr>
+<tr>
+<td class="nowrap">60</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.79</td>
+</tr>
+<tr>
+<td class="nowrap">62</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.33</td>
+</tr>
+<tr>
+<td class="nowrap">65</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.39</td>
+</tr>
+<tr>
+<td class="nowrap">67</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.11</td>
+</tr>
+<tr>
+<td class="nowrap">70</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.99</td>
+</tr>
+<tr>
+<td class="nowrap">72</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.74</td>
+</tr>
+<tr>
+<td class="nowrap">75</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.43</td>
+</tr>
+<tr>
+<td class="nowrap">77</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.07</td>
+</tr>
+<tr>
+<td class="nowrap">80</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">3.35</td>
+</tr>
+<tr>
+<td class="nowrap">82</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.2</td>
+</tr>
+<tr>
+<td class="nowrap">85</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">4.16</td>
+</tr>
+<tr>
+<td class="nowrap">87</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.18</td>
+</tr>
+<tr>
+<td class="nowrap">90</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.56</td>
+</tr>
+<tr>
+<td class="nowrap">92</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.19</td>
+</tr>
+<tr>
+<td class="nowrap">95</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.51</td>
+</tr>
+<tr>
+<td class="nowrap">97</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.17</td>
+</tr>
+<tr>
+<td class="nowrap">100</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.79</td>
+</tr>
+<tr>
+<td class="nowrap">102</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.07</td>
+</tr>
+<tr>
+<td class="nowrap">105</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.41</td>
+</tr>
+<tr>
+<td class="nowrap">107</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.19</td>
+</tr>
+<tr>
+<td class="nowrap">110</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.66</td>
+</tr>
+<tr>
+<td class="nowrap">113</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.17</td>
+</tr>
+<tr>
+<td class="nowrap">115</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.46</td>
+</tr>
+<tr>
+<td class="nowrap">118</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.31</td>
+</tr>
+<tr>
+<td class="nowrap">120</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.29</td>
+</tr>
+<tr>
+<td class="nowrap">123</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.16</td>
+</tr>
+<tr>
+<td class="nowrap">125</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.24</td>
+</tr>
+<tr>
+<td class="nowrap">128</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.14</td>
+</tr>
+<tr>
+<td class="nowrap">130</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.19</td>
+</tr>
+<tr>
+<td class="nowrap">133</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.12</td>
+</tr>
+<tr>
+<td class="nowrap">135</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.67</td>
+</tr>
+<tr>
+<td class="nowrap">138</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.31</td>
+</tr>
+<tr>
+<td class="nowrap">140</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.33</td>
+</tr>
+<tr>
+<td class="nowrap">143</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.13</td>
+</tr>
+<tr>
+<td class="nowrap">146</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.32</td>
+</tr>
+<tr>
+<td class="nowrap">148</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.11</td>
+</tr>
+<tr>
+<td class="nowrap">151</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.28</td>
+</tr>
+<tr>
+<td class="nowrap">153</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.13</td>
+</tr>
+</tbody></table></div>
+
+</details>
+
+<hr>
+
+<h3 id="pp-2048-tg-64">pp=2048 tg=64</h3>
+
+<div class="table-wrap"><table class="bench-table"><thead><tr>
+<th>model</th>
+<th>test</th>
+<th>t/s</th>
+<th>peak t/s</th>
+<th>ttfr (ms)</th>
+<th>est_ppt (ms)</th>
+<th>e2e_ttft (ms)</th>
+</tr></thead><tbody>
+<tr>
+<td class="model-name">qwen2.5:14b</td>
+<td>pp2048</td>
+<td class="nowrap">113.02 ± 0.55</td>
+<td class="nowrap"></td>
+<td class="nowrap">16628.86 ± 148.16</td>
+<td class="nowrap">16430.19 ± 148.16</td>
+<td class="nowrap">16628.86 ± 148.16</td>
+</tr>
+<tr>
+<td class="model-name">qwen2.5:14b</td>
+<td>tg64</td>
+<td class="nowrap">10.92 ± 0.01</td>
+<td class="nowrap">11.00 ± 0.00</td>
+<td class="nowrap"></td>
+<td class="nowrap"></td>
+<td class="nowrap"></td>
+</tr>
+</tbody></table></div>
+
+<h4 id="temperatures-utilization">Temperatures &amp; Utilization</h4>
+
+<div class="mermaid" data-src="xychart-beta
+  title &quot;Temperature — pp=2048 tg=64&quot;
+  x-axis &quot;Time (s)&quot; [0, 3, 5, 7, 12, 15, 17, 20, 25, 27, 30, 35, 37, 40, 42, 47, 50, 52, 55, 60, 62, 65, 70, 73, 75, 78, 83, 85, 88, 90, 95, 98, 100, 105, 108, 111, 113, 118, 121, 123]
+  y-axis &quot;W&quot; 0 --&gt; 7.96
+  line &quot;CPU W&quot; [0.12, 0.91, 0.13, 1.25, 1.7, 0.73, 0.84, 0.23, 0.1, 2.96, 0.11, 0.13, 0.11, 0.29, 0.13, 0.11, 1.12, 0.21, 1.74, 2.28, 0.96, 1.23, 1.23, 0.69, 1.17, 0.78, 0.38, 0.93, 0.2, 0.47, 0.99, 0.07, 0.82, 0.23, 0.05, 0.25, 0.07, 0.05, 0.37, 0.17]">xychart-beta
+  title &quot;Temperature — pp=2048 tg=64&quot;
+  x-axis &quot;Time (s)&quot; [0, 3, 5, 7, 12, 15, 17, 20, 25, 27, 30, 35, 37, 40, 42, 47, 50, 52, 55, 60, 62, 65, 70, 73, 75, 78, 83, 85, 88, 90, 95, 98, 100, 105, 108, 111, 113, 118, 121, 123]
+  y-axis &quot;W&quot; 0 --&gt; 7.96
+  line &quot;CPU W&quot; [0.12, 0.91, 0.13, 1.25, 1.7, 0.73, 0.84, 0.23, 0.1, 2.96, 0.11, 0.13, 0.11, 0.29, 0.13, 0.11, 1.12, 0.21, 1.74, 2.28, 0.96, 1.23, 1.23, 0.69, 1.17, 0.78, 0.38, 0.93, 0.2, 0.47, 0.99, 0.07, 0.82, 0.23, 0.05, 0.25, 0.07, 0.05, 0.37, 0.17]</div>
+
+<details><summary>Raw readings</summary>
+
+<div class="table-wrap"><table class="bench-table"><thead><tr>
+<th>Time (s)</th>
+<th>GPU °C</th>
+<th>GPU util %</th>
+<th>GPU W</th>
+<th>CPU °C</th>
+</tr></thead><tbody>
+<tr>
+<td class="nowrap">0</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.12</td>
+</tr>
+<tr>
+<td class="nowrap">3</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.91</td>
+</tr>
+<tr>
+<td class="nowrap">5</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.13</td>
+</tr>
+<tr>
+<td class="nowrap">7</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.25</td>
+</tr>
+<tr>
+<td class="nowrap">10</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.88</td>
+</tr>
+<tr>
+<td class="nowrap">12</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.7</td>
+</tr>
+<tr>
+<td class="nowrap">15</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.73</td>
+</tr>
+<tr>
+<td class="nowrap">17</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.84</td>
+</tr>
+<tr>
+<td class="nowrap">20</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.23</td>
+</tr>
+<tr>
+<td class="nowrap">22</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.36</td>
+</tr>
+<tr>
+<td class="nowrap">25</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.1</td>
+</tr>
+<tr>
+<td class="nowrap">27</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">2.96</td>
+</tr>
+<tr>
+<td class="nowrap">30</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.11</td>
+</tr>
+<tr>
+<td class="nowrap">32</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.45</td>
+</tr>
+<tr>
+<td class="nowrap">35</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.13</td>
+</tr>
+<tr>
+<td class="nowrap">37</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.11</td>
+</tr>
+<tr>
+<td class="nowrap">40</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.29</td>
+</tr>
+<tr>
+<td class="nowrap">42</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.13</td>
+</tr>
+<tr>
+<td class="nowrap">45</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.06</td>
+</tr>
+<tr>
+<td class="nowrap">47</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.11</td>
+</tr>
+<tr>
+<td class="nowrap">50</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.12</td>
+</tr>
+<tr>
+<td class="nowrap">52</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.21</td>
+</tr>
+<tr>
+<td class="nowrap">55</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.74</td>
+</tr>
+<tr>
+<td class="nowrap">57</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.63</td>
+</tr>
+<tr>
+<td class="nowrap">60</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">2.28</td>
+</tr>
+<tr>
+<td class="nowrap">62</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.96</td>
+</tr>
+<tr>
+<td class="nowrap">65</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.23</td>
+</tr>
+<tr>
+<td class="nowrap">67</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.31</td>
+</tr>
+<tr>
+<td class="nowrap">70</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.23</td>
+</tr>
+<tr>
+<td class="nowrap">73</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.69</td>
+</tr>
+<tr>
+<td class="nowrap">75</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.17</td>
+</tr>
+<tr>
+<td class="nowrap">78</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.78</td>
+</tr>
+<tr>
+<td class="nowrap">80</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.25</td>
+</tr>
+<tr>
+<td class="nowrap">83</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.38</td>
+</tr>
+<tr>
+<td class="nowrap">85</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.93</td>
+</tr>
+<tr>
+<td class="nowrap">88</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.2</td>
+</tr>
+<tr>
+<td class="nowrap">90</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.47</td>
+</tr>
+<tr>
+<td class="nowrap">93</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.05</td>
+</tr>
+<tr>
+<td class="nowrap">95</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.99</td>
+</tr>
+<tr>
+<td class="nowrap">98</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.07</td>
+</tr>
+<tr>
+<td class="nowrap">100</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.82</td>
+</tr>
+<tr>
+<td class="nowrap">103</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.13</td>
+</tr>
+<tr>
+<td class="nowrap">105</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.23</td>
+</tr>
+<tr>
+<td class="nowrap">108</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.05</td>
+</tr>
+<tr>
+<td class="nowrap">111</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.25</td>
+</tr>
+<tr>
+<td class="nowrap">113</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.07</td>
+</tr>
+<tr>
+<td class="nowrap">116</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.57</td>
+</tr>
+<tr>
+<td class="nowrap">118</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.05</td>
+</tr>
+<tr>
+<td class="nowrap">121</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.37</td>
+</tr>
+<tr>
+<td class="nowrap">123</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.17</td>
+</tr>
+<tr>
+<td class="nowrap">126</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.16</td>
+</tr>
+</tbody></table></div>
+
+</details>
+
+<hr>
+
+<h3 id="pp-2048-tg-256">pp=2048 tg=256</h3>
+
+<div class="table-wrap"><table class="bench-table"><thead><tr>
+<th>model</th>
+<th>test</th>
+<th>t/s</th>
+<th>peak t/s</th>
+<th>ttfr (ms)</th>
+<th>est_ppt (ms)</th>
+<th>e2e_ttft (ms)</th>
+</tr></thead><tbody>
+<tr>
+<td class="model-name">qwen2.5:14b</td>
+<td>pp2048</td>
+<td class="nowrap">109.85 ± 2.97</td>
+<td class="nowrap"></td>
+<td class="nowrap">17397.87 ± 423.56</td>
+<td class="nowrap">17197.49 ± 423.56</td>
+<td class="nowrap">17397.87 ± 423.56</td>
+</tr>
+<tr>
+<td class="model-name">qwen2.5:14b</td>
+<td>tg256</td>
+<td class="nowrap">10.84 ± 0.04</td>
+<td class="nowrap">11.00 ± 0.00</td>
+<td class="nowrap"></td>
+<td class="nowrap"></td>
+<td class="nowrap"></td>
+</tr>
+</tbody></table></div>
+
+<h4 id="temperatures-utilization">Temperatures &amp; Utilization</h4>
+
+<div class="mermaid" data-src="xychart-beta
+  title &quot;Temperature — pp=2048 tg=256&quot;
+  x-axis &quot;Time (s)&quot; [0, 2, 7, 12, 15, 20, 25, 27, 32, 37, 42, 45, 50, 55, 57, 63, 68, 70, 75, 80, 85, 88, 93, 98, 101, 106, 111, 113, 118, 123, 129, 131, 136, 141, 144, 149, 154, 156, 161, 166]
+  y-axis &quot;W&quot; 0 --&gt; 10.2
+  line &quot;CPU W&quot; [1.78, 1.09, 0.12, 0.23, 1.19, 0.28, 0.16, 0.36, 0.13, 0.12, 0.52, 3.25, 0.05, 0.11, 1.42, 1.53, 0.5, 0.13, 0.15, 0.13, 0.12, 0.48, 0.84, 0.05, 0.2, 0.07, 0.25, 0.13, 0.13, 0.14, 0.15, 5.2, 3.0, 1.73, 0.06, 0.15, 0.13, 1.89, 1.93, 1.9]">xychart-beta
+  title &quot;Temperature — pp=2048 tg=256&quot;
+  x-axis &quot;Time (s)&quot; [0, 2, 7, 12, 15, 20, 25, 27, 32, 37, 42, 45, 50, 55, 57, 63, 68, 70, 75, 80, 85, 88, 93, 98, 101, 106, 111, 113, 118, 123, 129, 131, 136, 141, 144, 149, 154, 156, 161, 166]
+  y-axis &quot;W&quot; 0 --&gt; 10.2
+  line &quot;CPU W&quot; [1.78, 1.09, 0.12, 0.23, 1.19, 0.28, 0.16, 0.36, 0.13, 0.12, 0.52, 3.25, 0.05, 0.11, 1.42, 1.53, 0.5, 0.13, 0.15, 0.13, 0.12, 0.48, 0.84, 0.05, 0.2, 0.07, 0.25, 0.13, 0.13, 0.14, 0.15, 5.2, 3.0, 1.73, 0.06, 0.15, 0.13, 1.89, 1.93, 1.9]</div>
+
+<details><summary>Raw readings</summary>
+
+<div class="table-wrap"><table class="bench-table"><thead><tr>
+<th>Time (s)</th>
+<th>GPU °C</th>
+<th>GPU util %</th>
+<th>GPU W</th>
+<th>CPU °C</th>
+</tr></thead><tbody>
+<tr>
+<td class="nowrap">0</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.78</td>
+</tr>
+<tr>
+<td class="nowrap">2</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.09</td>
+</tr>
+<tr>
+<td class="nowrap">5</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.63</td>
+</tr>
+<tr>
+<td class="nowrap">7</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.12</td>
+</tr>
+<tr>
+<td class="nowrap">10</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.66</td>
+</tr>
+<tr>
+<td class="nowrap">12</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.23</td>
+</tr>
+<tr>
+<td class="nowrap">15</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.19</td>
+</tr>
+<tr>
+<td class="nowrap">17</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.15</td>
+</tr>
+<tr>
+<td class="nowrap">20</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.28</td>
+</tr>
+<tr>
+<td class="nowrap">22</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.88</td>
+</tr>
+<tr>
+<td class="nowrap">25</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.16</td>
+</tr>
+<tr>
+<td class="nowrap">27</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.36</td>
+</tr>
+<tr>
+<td class="nowrap">30</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.13</td>
+</tr>
+<tr>
+<td class="nowrap">32</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.13</td>
+</tr>
+<tr>
+<td class="nowrap">35</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.91</td>
+</tr>
+<tr>
+<td class="nowrap">37</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.12</td>
+</tr>
+<tr>
+<td class="nowrap">40</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.43</td>
+</tr>
+<tr>
+<td class="nowrap">42</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.52</td>
+</tr>
+<tr>
+<td class="nowrap">45</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">3.25</td>
+</tr>
+<tr>
+<td class="nowrap">47</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.07</td>
+</tr>
+<tr>
+<td class="nowrap">50</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.05</td>
+</tr>
+<tr>
+<td class="nowrap">52</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.81</td>
+</tr>
+<tr>
+<td class="nowrap">55</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.11</td>
+</tr>
+<tr>
+<td class="nowrap">57</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.42</td>
+</tr>
+<tr>
+<td class="nowrap">60</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.05</td>
+</tr>
+<tr>
+<td class="nowrap">63</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.53</td>
+</tr>
+<tr>
+<td class="nowrap">65</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.23</td>
+</tr>
+<tr>
+<td class="nowrap">68</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.5</td>
+</tr>
+<tr>
+<td class="nowrap">70</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.13</td>
+</tr>
+<tr>
+<td class="nowrap">73</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.39</td>
+</tr>
+<tr>
+<td class="nowrap">75</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.15</td>
+</tr>
+<tr>
+<td class="nowrap">78</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.34</td>
+</tr>
+<tr>
+<td class="nowrap">80</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.13</td>
+</tr>
+<tr>
+<td class="nowrap">83</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.52</td>
+</tr>
+<tr>
+<td class="nowrap">85</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.12</td>
+</tr>
+<tr>
+<td class="nowrap">88</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.48</td>
+</tr>
+<tr>
+<td class="nowrap">90</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.06</td>
+</tr>
+<tr>
+<td class="nowrap">93</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.84</td>
+</tr>
+<tr>
+<td class="nowrap">96</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.05</td>
+</tr>
+<tr>
+<td class="nowrap">98</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.05</td>
+</tr>
+<tr>
+<td class="nowrap">101</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.2</td>
+</tr>
+<tr>
+<td class="nowrap">103</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.24</td>
+</tr>
+<tr>
+<td class="nowrap">106</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.07</td>
+</tr>
+<tr>
+<td class="nowrap">108</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.15</td>
+</tr>
+<tr>
+<td class="nowrap">111</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.25</td>
+</tr>
+<tr>
+<td class="nowrap">113</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.13</td>
+</tr>
+<tr>
+<td class="nowrap">116</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.45</td>
+</tr>
+<tr>
+<td class="nowrap">118</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.13</td>
+</tr>
+<tr>
+<td class="nowrap">121</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.98</td>
+</tr>
+<tr>
+<td class="nowrap">123</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.14</td>
+</tr>
+<tr>
+<td class="nowrap">126</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">2.36</td>
+</tr>
+<tr>
+<td class="nowrap">129</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.15</td>
+</tr>
+<tr>
+<td class="nowrap">131</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">5.2</td>
+</tr>
+<tr>
+<td class="nowrap">134</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.06</td>
+</tr>
+<tr>
+<td class="nowrap">136</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">3.0</td>
+</tr>
+<tr>
+<td class="nowrap">139</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.06</td>
+</tr>
+<tr>
+<td class="nowrap">141</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.73</td>
+</tr>
+<tr>
+<td class="nowrap">144</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.06</td>
+</tr>
+<tr>
+<td class="nowrap">146</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.67</td>
+</tr>
+<tr>
+<td class="nowrap">149</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.15</td>
+</tr>
+<tr>
+<td class="nowrap">151</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">2.12</td>
+</tr>
+<tr>
+<td class="nowrap">154</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.13</td>
+</tr>
+<tr>
+<td class="nowrap">156</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.89</td>
+</tr>
+<tr>
+<td class="nowrap">159</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.12</td>
+</tr>
+<tr>
+<td class="nowrap">161</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.93</td>
+</tr>
+<tr>
+<td class="nowrap">164</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.16</td>
+</tr>
+<tr>
+<td class="nowrap">166</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.9</td>
+</tr>
+<tr>
+<td class="nowrap">169</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.14</td>
+</tr>
+</tbody></table></div>
+
+</details>
+
+<hr>
+
+</details></section>
+<section id="model-mistral-nemo" class="model-section">
+<details><summary class="model-header"><h2>Benchmark Report: mistral-nemo</h2></summary>
+
+<p><strong>Date:</strong> 2026-04-19 16:17</p>
+<p><strong>Machine:</strong> Apple M4, 16GB unified memory, macOS</p>
+<p><strong>Endpoint:</strong> http://localhost:11434/v1</p>
+<p><strong>Run platform:</strong> Darwin arm64</p>
+<p><strong>Runs per test:</strong> 3</p>
+
+<hr>
+
+<h3 id="summary">Summary</h3>
+
+<div class="table-wrap"><table class="bench-table"><thead><tr>
+<th>pp</th>
+<th>tg</th>
+<th>Duration (s)</th>
+<th>GPU peak °C</th>
+<th>CPU peak °C</th>
+</tr></thead><tbody>
+<tr>
+<td class="nowrap">512</td>
+<td class="nowrap">64</td>
+<td class="nowrap">57</td>
+<td class="nowrap">0</td>
+<td class="nowrap">6.46</td>
+</tr>
+<tr>
+<td class="nowrap">512</td>
+<td class="nowrap">256</td>
+<td class="nowrap">85</td>
+<td class="nowrap">0</td>
+<td class="nowrap">3.71</td>
+</tr>
+<tr>
+<td class="nowrap">2048</td>
+<td class="nowrap">64</td>
+<td class="nowrap">73</td>
+<td class="nowrap">0</td>
+<td class="nowrap">1.55</td>
+</tr>
+<tr>
+<td class="nowrap">2048</td>
+<td class="nowrap">256</td>
+<td class="nowrap">116</td>
+<td class="nowrap">0</td>
+<td class="nowrap">3.78</td>
+</tr>
+</tbody></table></div>
+
+<hr>
+
+<h3 id="pp-512-tg-64">pp=512 tg=64</h3>
+
+<div class="table-wrap"><table class="bench-table"><thead><tr>
+<th>model</th>
+<th>test</th>
+<th>t/s</th>
+<th>peak t/s</th>
+<th>ttfr (ms)</th>
+<th>est_ppt (ms)</th>
+<th>e2e_ttft (ms)</th>
+</tr></thead><tbody>
+<tr>
+<td class="model-name">mistral-nemo</td>
+<td>pp512</td>
+<td class="nowrap">156.20 ± 2.01</td>
+<td class="nowrap"></td>
+<td class="nowrap">3114.55 ± 112.30</td>
+<td class="nowrap">2989.03 ± 112.30</td>
+<td class="nowrap">3114.55 ± 112.30</td>
+</tr>
+<tr>
+<td class="model-name">mistral-nemo</td>
+<td>tg64</td>
+<td class="nowrap">14.51 ± 0.01</td>
+<td class="nowrap">15.00 ± 0.00</td>
+<td class="nowrap"></td>
+<td class="nowrap"></td>
+<td class="nowrap"></td>
+</tr>
+</tbody></table></div>
+
+<h4 id="temperatures-utilization">Temperatures &amp; Utilization</h4>
+
+<div class="mermaid" data-src="xychart-beta
+  title &quot;Temperature — pp=512 tg=64&quot;
+  x-axis &quot;Time (s)&quot; [0, 3, 5, 7, 10, 12, 15, 17, 20, 22, 25, 27, 30, 32, 35, 37, 40, 42, 45, 47, 50, 52, 55]
+  y-axis &quot;W&quot; 0 --&gt; 11.46
+  line &quot;CPU W&quot; [1.1, 0.26, 0.14, 1.97, 0.58, 0.96, 0.24, 0.08, 2.77, 0.19, 6.46, 0.09, 0.35, 0.11, 0.56, 0.2, 0.3, 0.27, 0.17, 1.84, 0.24, 2.39, 0.16]">xychart-beta
+  title &quot;Temperature — pp=512 tg=64&quot;
+  x-axis &quot;Time (s)&quot; [0, 3, 5, 7, 10, 12, 15, 17, 20, 22, 25, 27, 30, 32, 35, 37, 40, 42, 45, 47, 50, 52, 55]
+  y-axis &quot;W&quot; 0 --&gt; 11.46
+  line &quot;CPU W&quot; [1.1, 0.26, 0.14, 1.97, 0.58, 0.96, 0.24, 0.08, 2.77, 0.19, 6.46, 0.09, 0.35, 0.11, 0.56, 0.2, 0.3, 0.27, 0.17, 1.84, 0.24, 2.39, 0.16]</div>
+
+<details><summary>Raw readings</summary>
+
+<div class="table-wrap"><table class="bench-table"><thead><tr>
+<th>Time (s)</th>
+<th>GPU °C</th>
+<th>GPU util %</th>
+<th>GPU W</th>
+<th>CPU °C</th>
+</tr></thead><tbody>
+<tr>
+<td class="nowrap">0</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.1</td>
+</tr>
+<tr>
+<td class="nowrap">3</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.26</td>
+</tr>
+<tr>
+<td class="nowrap">5</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.14</td>
+</tr>
+<tr>
+<td class="nowrap">7</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.97</td>
+</tr>
+<tr>
+<td class="nowrap">10</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.58</td>
+</tr>
+<tr>
+<td class="nowrap">12</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.96</td>
+</tr>
+<tr>
+<td class="nowrap">15</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.24</td>
+</tr>
+<tr>
+<td class="nowrap">17</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.08</td>
+</tr>
+<tr>
+<td class="nowrap">20</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">2.77</td>
+</tr>
+<tr>
+<td class="nowrap">22</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.19</td>
+</tr>
+<tr>
+<td class="nowrap">25</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">6.46</td>
+</tr>
+<tr>
+<td class="nowrap">27</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.09</td>
+</tr>
+<tr>
+<td class="nowrap">30</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.35</td>
+</tr>
+<tr>
+<td class="nowrap">32</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.11</td>
+</tr>
+<tr>
+<td class="nowrap">35</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.56</td>
+</tr>
+<tr>
+<td class="nowrap">37</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.2</td>
+</tr>
+<tr>
+<td class="nowrap">40</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.3</td>
+</tr>
+<tr>
+<td class="nowrap">42</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.27</td>
+</tr>
+<tr>
+<td class="nowrap">45</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.17</td>
+</tr>
+<tr>
+<td class="nowrap">47</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.84</td>
+</tr>
+<tr>
+<td class="nowrap">50</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.24</td>
+</tr>
+<tr>
+<td class="nowrap">52</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">2.39</td>
+</tr>
+<tr>
+<td class="nowrap">55</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.16</td>
+</tr>
+</tbody></table></div>
+
+</details>
+
+<hr>
+
+<h3 id="pp-512-tg-256">pp=512 tg=256</h3>
+
+<div class="table-wrap"><table class="bench-table"><thead><tr>
+<th>model</th>
+<th>test</th>
+<th>t/s</th>
+<th>peak t/s</th>
+<th>ttfr (ms)</th>
+<th>est_ppt (ms)</th>
+<th>e2e_ttft (ms)</th>
+</tr></thead><tbody>
+<tr>
+<td class="model-name">mistral-nemo</td>
+<td>pp512</td>
+<td class="nowrap">151.69 ± 5.16</td>
+<td class="nowrap"></td>
+<td class="nowrap">3177.52 ± 183.83</td>
+<td class="nowrap">3051.26 ± 183.83</td>
+<td class="nowrap">3177.52 ± 183.83</td>
+</tr>
+<tr>
+<td class="model-name">mistral-nemo</td>
+<td>tg256</td>
+<td class="nowrap">14.50 ± 0.06</td>
+<td class="nowrap">15.00 ± 0.00</td>
+<td class="nowrap"></td>
+<td class="nowrap"></td>
+<td class="nowrap"></td>
+</tr>
+</tbody></table></div>
+
+<h4 id="temperatures-utilization">Temperatures &amp; Utilization</h4>
+
+<div class="mermaid" data-src="xychart-beta
+  title &quot;Temperature — pp=512 tg=256&quot;
+  x-axis &quot;Time (s)&quot; [0, 2, 5, 7, 10, 12, 15, 17, 20, 22, 25, 27, 30, 32, 35, 38, 40, 43, 45, 48, 50, 53, 55, 58, 60, 63, 65, 68, 70, 73, 76, 78, 81, 83]
+  y-axis &quot;W&quot; 0 --&gt; 8.71
+  line &quot;CPU W&quot; [1.43, 1.3, 0.62, 0.26, 0.54, 0.27, 0.24, 0.32, 3.71, 0.08, 0.04, 0.17, 0.16, 0.17, 0.16, 0.16, 0.2, 0.31, 0.23, 1.2, 0.21, 1.06, 0.24, 1.17, 0.43, 1.14, 0.27, 1.22, 0.43, 0.49, 0.66, 0.69, 0.84, 2.05]">xychart-beta
+  title &quot;Temperature — pp=512 tg=256&quot;
+  x-axis &quot;Time (s)&quot; [0, 2, 5, 7, 10, 12, 15, 17, 20, 22, 25, 27, 30, 32, 35, 38, 40, 43, 45, 48, 50, 53, 55, 58, 60, 63, 65, 68, 70, 73, 76, 78, 81, 83]
+  y-axis &quot;W&quot; 0 --&gt; 8.71
+  line &quot;CPU W&quot; [1.43, 1.3, 0.62, 0.26, 0.54, 0.27, 0.24, 0.32, 3.71, 0.08, 0.04, 0.17, 0.16, 0.17, 0.16, 0.16, 0.2, 0.31, 0.23, 1.2, 0.21, 1.06, 0.24, 1.17, 0.43, 1.14, 0.27, 1.22, 0.43, 0.49, 0.66, 0.69, 0.84, 2.05]</div>
+
+<details><summary>Raw readings</summary>
+
+<div class="table-wrap"><table class="bench-table"><thead><tr>
+<th>Time (s)</th>
+<th>GPU °C</th>
+<th>GPU util %</th>
+<th>GPU W</th>
+<th>CPU °C</th>
+</tr></thead><tbody>
+<tr>
+<td class="nowrap">0</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.43</td>
+</tr>
+<tr>
+<td class="nowrap">2</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.3</td>
+</tr>
+<tr>
+<td class="nowrap">5</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.62</td>
+</tr>
+<tr>
+<td class="nowrap">7</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.26</td>
+</tr>
+<tr>
+<td class="nowrap">10</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.54</td>
+</tr>
+<tr>
+<td class="nowrap">12</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.27</td>
+</tr>
+<tr>
+<td class="nowrap">15</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.24</td>
+</tr>
+<tr>
+<td class="nowrap">17</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.32</td>
+</tr>
+<tr>
+<td class="nowrap">20</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">3.71</td>
+</tr>
+<tr>
+<td class="nowrap">22</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.08</td>
+</tr>
+<tr>
+<td class="nowrap">25</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.04</td>
+</tr>
+<tr>
+<td class="nowrap">27</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.17</td>
+</tr>
+<tr>
+<td class="nowrap">30</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.16</td>
+</tr>
+<tr>
+<td class="nowrap">32</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.17</td>
+</tr>
+<tr>
+<td class="nowrap">35</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.16</td>
+</tr>
+<tr>
+<td class="nowrap">38</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.16</td>
+</tr>
+<tr>
+<td class="nowrap">40</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.2</td>
+</tr>
+<tr>
+<td class="nowrap">43</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.31</td>
+</tr>
+<tr>
+<td class="nowrap">45</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.23</td>
+</tr>
+<tr>
+<td class="nowrap">48</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.2</td>
+</tr>
+<tr>
+<td class="nowrap">50</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.21</td>
+</tr>
+<tr>
+<td class="nowrap">53</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.06</td>
+</tr>
+<tr>
+<td class="nowrap">55</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.24</td>
+</tr>
+<tr>
+<td class="nowrap">58</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.17</td>
+</tr>
+<tr>
+<td class="nowrap">60</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.43</td>
+</tr>
+<tr>
+<td class="nowrap">63</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.14</td>
+</tr>
+<tr>
+<td class="nowrap">65</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.27</td>
+</tr>
+<tr>
+<td class="nowrap">68</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.22</td>
+</tr>
+<tr>
+<td class="nowrap">70</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.43</td>
+</tr>
+<tr>
+<td class="nowrap">73</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.49</td>
+</tr>
+<tr>
+<td class="nowrap">76</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.66</td>
+</tr>
+<tr>
+<td class="nowrap">78</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.69</td>
+</tr>
+<tr>
+<td class="nowrap">81</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.84</td>
+</tr>
+<tr>
+<td class="nowrap">83</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">2.05</td>
+</tr>
+</tbody></table></div>
+
+</details>
+
+<hr>
+
+<h3 id="pp-2048-tg-64">pp=2048 tg=64</h3>
+
+<div class="table-wrap"><table class="bench-table"><thead><tr>
+<th>model</th>
+<th>test</th>
+<th>t/s</th>
+<th>peak t/s</th>
+<th>ttfr (ms)</th>
+<th>est_ppt (ms)</th>
+<th>e2e_ttft (ms)</th>
+</tr></thead><tbody>
+<tr>
+<td class="model-name">mistral-nemo</td>
+<td>pp2048</td>
+<td class="nowrap">146.90 ± 0.37</td>
+<td class="nowrap"></td>
+<td class="nowrap">12340.21 ± 277.33</td>
+<td class="nowrap">12211.55 ± 277.33</td>
+<td class="nowrap">12340.21 ± 277.33</td>
+</tr>
+<tr>
+<td class="model-name">mistral-nemo</td>
+<td>tg64</td>
+<td class="nowrap">14.00 ± 0.12</td>
+<td class="nowrap">15.00 ± 0.00</td>
+<td class="nowrap"></td>
+<td class="nowrap"></td>
+<td class="nowrap"></td>
+</tr>
+</tbody></table></div>
+
+<h4 id="temperatures-utilization">Temperatures &amp; Utilization</h4>
+
+<div class="mermaid" data-src="xychart-beta
+  title &quot;Temperature — pp=2048 tg=64&quot;
+  x-axis &quot;Time (s)&quot; [0, 2, 5, 7, 10, 12, 15, 17, 20, 22, 25, 27, 30, 33, 35, 38, 40, 43, 45, 48, 50, 53, 55, 58, 60, 63, 66, 68, 71, 73]
+  y-axis &quot;W&quot; 0 --&gt; 6.55
+  line &quot;CPU W&quot; [1.55, 0.5, 0.44, 0.2, 0.26, 0.37, 1.06, 0.17, 1.08, 0.27, 0.86, 0.05, 0.22, 0.36, 0.29, 0.14, 0.17, 0.05, 0.05, 0.09, 0.14, 0.18, 0.31, 0.35, 0.32, 0.2, 0.42, 1.01, 1.01, 1.04]">xychart-beta
+  title &quot;Temperature — pp=2048 tg=64&quot;
+  x-axis &quot;Time (s)&quot; [0, 2, 5, 7, 10, 12, 15, 17, 20, 22, 25, 27, 30, 33, 35, 38, 40, 43, 45, 48, 50, 53, 55, 58, 60, 63, 66, 68, 71, 73]
+  y-axis &quot;W&quot; 0 --&gt; 6.55
+  line &quot;CPU W&quot; [1.55, 0.5, 0.44, 0.2, 0.26, 0.37, 1.06, 0.17, 1.08, 0.27, 0.86, 0.05, 0.22, 0.36, 0.29, 0.14, 0.17, 0.05, 0.05, 0.09, 0.14, 0.18, 0.31, 0.35, 0.32, 0.2, 0.42, 1.01, 1.01, 1.04]</div>
+
+<details><summary>Raw readings</summary>
+
+<div class="table-wrap"><table class="bench-table"><thead><tr>
+<th>Time (s)</th>
+<th>GPU °C</th>
+<th>GPU util %</th>
+<th>GPU W</th>
+<th>CPU °C</th>
+</tr></thead><tbody>
+<tr>
+<td class="nowrap">0</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.55</td>
+</tr>
+<tr>
+<td class="nowrap">2</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.5</td>
+</tr>
+<tr>
+<td class="nowrap">5</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.44</td>
+</tr>
+<tr>
+<td class="nowrap">7</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.2</td>
+</tr>
+<tr>
+<td class="nowrap">10</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.26</td>
+</tr>
+<tr>
+<td class="nowrap">12</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.37</td>
+</tr>
+<tr>
+<td class="nowrap">15</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.06</td>
+</tr>
+<tr>
+<td class="nowrap">17</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.17</td>
+</tr>
+<tr>
+<td class="nowrap">20</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.08</td>
+</tr>
+<tr>
+<td class="nowrap">22</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.27</td>
+</tr>
+<tr>
+<td class="nowrap">25</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.86</td>
+</tr>
+<tr>
+<td class="nowrap">27</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.05</td>
+</tr>
+<tr>
+<td class="nowrap">30</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.22</td>
+</tr>
+<tr>
+<td class="nowrap">33</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.36</td>
+</tr>
+<tr>
+<td class="nowrap">35</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.29</td>
+</tr>
+<tr>
+<td class="nowrap">38</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.14</td>
+</tr>
+<tr>
+<td class="nowrap">40</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.17</td>
+</tr>
+<tr>
+<td class="nowrap">43</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.05</td>
+</tr>
+<tr>
+<td class="nowrap">45</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.05</td>
+</tr>
+<tr>
+<td class="nowrap">48</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.09</td>
+</tr>
+<tr>
+<td class="nowrap">50</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.14</td>
+</tr>
+<tr>
+<td class="nowrap">53</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.18</td>
+</tr>
+<tr>
+<td class="nowrap">55</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.31</td>
+</tr>
+<tr>
+<td class="nowrap">58</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.35</td>
+</tr>
+<tr>
+<td class="nowrap">60</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.32</td>
+</tr>
+<tr>
+<td class="nowrap">63</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.2</td>
+</tr>
+<tr>
+<td class="nowrap">66</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.42</td>
+</tr>
+<tr>
+<td class="nowrap">68</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.01</td>
+</tr>
+<tr>
+<td class="nowrap">71</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.01</td>
+</tr>
+<tr>
+<td class="nowrap">73</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.04</td>
+</tr>
+</tbody></table></div>
+
+</details>
+
+<hr>
+
+<h3 id="pp-2048-tg-256">pp=2048 tg=256</h3>
+
+<div class="table-wrap"><table class="bench-table"><thead><tr>
+<th>model</th>
+<th>test</th>
+<th>t/s</th>
+<th>peak t/s</th>
+<th>ttfr (ms)</th>
+<th>est_ppt (ms)</th>
+<th>e2e_ttft (ms)</th>
+</tr></thead><tbody>
+<tr>
+<td class="model-name">mistral-nemo</td>
+<td>pp2048</td>
+<td class="nowrap">146.81 ± 0.35</td>
+<td class="nowrap"></td>
+<td class="nowrap">12968.35 ± 289.03</td>
+<td class="nowrap">12840.15 ± 289.03</td>
+<td class="nowrap">12968.35 ± 289.03</td>
+</tr>
+<tr>
+<td class="model-name">mistral-nemo</td>
+<td>tg256</td>
+<td class="nowrap">14.03 ± 0.01</td>
+<td class="nowrap">15.00 ± 0.00</td>
+<td class="nowrap"></td>
+<td class="nowrap"></td>
+<td class="nowrap"></td>
+</tr>
+</tbody></table></div>
+
+<h4 id="temperatures-utilization">Temperatures &amp; Utilization</h4>
+
+<div class="mermaid" data-src="xychart-beta
+  title &quot;Temperature — pp=2048 tg=256&quot;
+  x-axis &quot;Time (s)&quot; [0, 3, 5, 8, 10, 12, 15, 20, 22, 25, 28, 30, 33, 35, 40, 43, 45, 48, 50, 53, 58, 61, 63, 66, 68, 71, 73, 78, 81, 83, 86, 88, 91, 93, 99, 101, 104, 106, 109, 111]
+  y-axis &quot;W&quot; 0 --&gt; 7.65
+  line &quot;CPU W&quot; [1.21, 1.16, 0.53, 0.79, 0.25, 0.23, 0.43, 1.11, 0.09, 0.36, 0.59, 0.05, 2.42, 0.17, 0.2, 2.65, 0.22, 1.45, 0.28, 1.35, 0.05, 0.29, 0.25, 0.45, 0.14, 0.95, 0.14, 0.15, 1.31, 0.15, 1.09, 0.06, 2.07, 0.05, 0.14, 1.84, 0.18, 1.16, 0.16, 0.83]">xychart-beta
+  title &quot;Temperature — pp=2048 tg=256&quot;
+  x-axis &quot;Time (s)&quot; [0, 3, 5, 8, 10, 12, 15, 20, 22, 25, 28, 30, 33, 35, 40, 43, 45, 48, 50, 53, 58, 61, 63, 66, 68, 71, 73, 78, 81, 83, 86, 88, 91, 93, 99, 101, 104, 106, 109, 111]
+  y-axis &quot;W&quot; 0 --&gt; 7.65
+  line &quot;CPU W&quot; [1.21, 1.16, 0.53, 0.79, 0.25, 0.23, 0.43, 1.11, 0.09, 0.36, 0.59, 0.05, 2.42, 0.17, 0.2, 2.65, 0.22, 1.45, 0.28, 1.35, 0.05, 0.29, 0.25, 0.45, 0.14, 0.95, 0.14, 0.15, 1.31, 0.15, 1.09, 0.06, 2.07, 0.05, 0.14, 1.84, 0.18, 1.16, 0.16, 0.83]</div>
+
+<details><summary>Raw readings</summary>
+
+<div class="table-wrap"><table class="bench-table"><thead><tr>
+<th>Time (s)</th>
+<th>GPU °C</th>
+<th>GPU util %</th>
+<th>GPU W</th>
+<th>CPU °C</th>
+</tr></thead><tbody>
+<tr>
+<td class="nowrap">0</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.21</td>
+</tr>
+<tr>
+<td class="nowrap">3</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.16</td>
+</tr>
+<tr>
+<td class="nowrap">5</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.53</td>
+</tr>
+<tr>
+<td class="nowrap">8</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.79</td>
+</tr>
+<tr>
+<td class="nowrap">10</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.25</td>
+</tr>
+<tr>
+<td class="nowrap">12</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.23</td>
+</tr>
+<tr>
+<td class="nowrap">15</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.43</td>
+</tr>
+<tr>
+<td class="nowrap">17</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">3.78</td>
+</tr>
+<tr>
+<td class="nowrap">20</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.11</td>
+</tr>
+<tr>
+<td class="nowrap">22</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.09</td>
+</tr>
+<tr>
+<td class="nowrap">25</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.36</td>
+</tr>
+<tr>
+<td class="nowrap">28</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.59</td>
+</tr>
+<tr>
+<td class="nowrap">30</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.05</td>
+</tr>
+<tr>
+<td class="nowrap">33</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">2.42</td>
+</tr>
+<tr>
+<td class="nowrap">35</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.17</td>
+</tr>
+<tr>
+<td class="nowrap">38</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">3.02</td>
+</tr>
+<tr>
+<td class="nowrap">40</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.2</td>
+</tr>
+<tr>
+<td class="nowrap">43</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">2.65</td>
+</tr>
+<tr>
+<td class="nowrap">45</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.22</td>
+</tr>
+<tr>
+<td class="nowrap">48</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.45</td>
+</tr>
+<tr>
+<td class="nowrap">50</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.28</td>
+</tr>
+<tr>
+<td class="nowrap">53</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.35</td>
+</tr>
+<tr>
+<td class="nowrap">55</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.21</td>
+</tr>
+<tr>
+<td class="nowrap">58</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.05</td>
+</tr>
+<tr>
+<td class="nowrap">61</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.29</td>
+</tr>
+<tr>
+<td class="nowrap">63</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.25</td>
+</tr>
+<tr>
+<td class="nowrap">66</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.45</td>
+</tr>
+<tr>
+<td class="nowrap">68</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.14</td>
+</tr>
+<tr>
+<td class="nowrap">71</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.95</td>
+</tr>
+<tr>
+<td class="nowrap">73</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.14</td>
+</tr>
+<tr>
+<td class="nowrap">76</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.13</td>
+</tr>
+<tr>
+<td class="nowrap">78</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.15</td>
+</tr>
+<tr>
+<td class="nowrap">81</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.31</td>
+</tr>
+<tr>
+<td class="nowrap">83</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.15</td>
+</tr>
+<tr>
+<td class="nowrap">86</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.09</td>
+</tr>
+<tr>
+<td class="nowrap">88</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.06</td>
+</tr>
+<tr>
+<td class="nowrap">91</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">2.07</td>
+</tr>
+<tr>
+<td class="nowrap">93</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.05</td>
+</tr>
+<tr>
+<td class="nowrap">96</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.25</td>
+</tr>
+<tr>
+<td class="nowrap">99</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.14</td>
+</tr>
+<tr>
+<td class="nowrap">101</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.84</td>
+</tr>
+<tr>
+<td class="nowrap">104</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.18</td>
+</tr>
+<tr>
+<td class="nowrap">106</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.16</td>
+</tr>
+<tr>
+<td class="nowrap">109</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.16</td>
+</tr>
+<tr>
+<td class="nowrap">111</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.83</td>
+</tr>
+<tr>
+<td class="nowrap">114</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.42</td>
+</tr>
+</tbody></table></div>
+
+</details>
+
+<hr>
+
+</details></section>
+<section id="model-jjansen-adapt-finance-llama2-7b" class="model-section">
+<details><summary class="model-header"><h2>Benchmark Report: jjansen/adapt-finance-llama2-7b</h2></summary>
+
+<p><strong>Date:</strong> 2026-04-19 17:18</p>
+<p><strong>Machine:</strong> Apple M4, 16GB unified memory, macOS</p>
+<p><strong>Endpoint:</strong> http://localhost:11434/v1</p>
+<p><strong>Run platform:</strong> Darwin arm64</p>
+<p><strong>Runs per test:</strong> 3</p>
+
+<hr>
+
+<h3 id="summary">Summary</h3>
+
+<div class="table-wrap"><table class="bench-table"><thead><tr>
+<th>pp</th>
+<th>tg</th>
+<th>Duration (s)</th>
+<th>GPU peak °C</th>
+<th>CPU peak °C</th>
+</tr></thead><tbody>
+<tr>
+<td class="nowrap">512</td>
+<td class="nowrap">64</td>
+<td class="nowrap">62</td>
+<td class="nowrap">0</td>
+<td class="nowrap">9.51</td>
+</tr>
+<tr>
+<td class="nowrap">512</td>
+<td class="nowrap">256</td>
+<td class="nowrap">33</td>
+<td class="nowrap">0</td>
+<td class="nowrap">6.06</td>
+</tr>
+<tr>
+<td class="nowrap">2048</td>
+<td class="nowrap">64</td>
+<td class="nowrap">37</td>
+<td class="nowrap">0</td>
+<td class="nowrap">2.23</td>
+</tr>
+<tr>
+<td class="nowrap">2048</td>
+<td class="nowrap">256</td>
+<td class="nowrap">49</td>
+<td class="nowrap">0</td>
+<td class="nowrap">5.02</td>
+</tr>
+</tbody></table></div>
+
+<hr>
+
+<h3 id="pp-512-tg-64">pp=512 tg=64</h3>
+
+<div class="table-wrap"><table class="bench-table"><thead><tr>
+<th>model</th>
+<th>test</th>
+<th>t/s</th>
+<th>peak t/s</th>
+<th>ttfr (ms)</th>
+<th>est_ppt (ms)</th>
+<th>e2e_ttft (ms)</th>
+</tr></thead><tbody>
+<tr>
+<td class="model-name">jjansen/adapt-finance-llama2-7b</td>
+<td>pp512</td>
+<td class="nowrap">255.02 ± 3.17</td>
+<td class="nowrap"></td>
+<td class="nowrap">1538.90 ± 17.84</td>
+<td class="nowrap">1427.58 ± 17.84</td>
+<td class="nowrap">1538.90 ± 17.84</td>
+</tr>
+<tr>
+<td class="model-name">jjansen/adapt-finance-llama2-7b</td>
+<td>tg64</td>
+<td class="nowrap">24.38 ± 0.01</td>
+<td class="nowrap">25.00 ± 0.00</td>
+<td class="nowrap"></td>
+<td class="nowrap"></td>
+<td class="nowrap"></td>
+</tr>
+</tbody></table></div>
+
+<h4 id="temperatures-utilization">Temperatures &amp; Utilization</h4>
+
+<div class="mermaid" data-src="xychart-beta
+  title &quot;Temperature — pp=512 tg=64&quot;
+  x-axis &quot;Time (s)&quot; [0, 3, 5, 8, 10, 13, 15, 17, 20, 22, 25, 27, 30, 32, 35, 37, 40, 42, 45, 47, 50, 52, 55, 57, 60, 62]
+  y-axis &quot;W&quot; 0 --&gt; 14.51
+  line &quot;CPU W&quot; [9.51, 1.03, 0.31, 1.02, 0.22, 1.08, 0.08, 0.21, 0.3, 0.07, 0.06, 0.09, 0.95, 0.07, 1.09, 0.07, 0.33, 0.9, 0.07, 0.85, 0.2, 0.16, 0.05, 0.25, 0.15, 0.05]">xychart-beta
+  title &quot;Temperature — pp=512 tg=64&quot;
+  x-axis &quot;Time (s)&quot; [0, 3, 5, 8, 10, 13, 15, 17, 20, 22, 25, 27, 30, 32, 35, 37, 40, 42, 45, 47, 50, 52, 55, 57, 60, 62]
+  y-axis &quot;W&quot; 0 --&gt; 14.51
+  line &quot;CPU W&quot; [9.51, 1.03, 0.31, 1.02, 0.22, 1.08, 0.08, 0.21, 0.3, 0.07, 0.06, 0.09, 0.95, 0.07, 1.09, 0.07, 0.33, 0.9, 0.07, 0.85, 0.2, 0.16, 0.05, 0.25, 0.15, 0.05]</div>
+
+<details><summary>Raw readings</summary>
+
+<div class="table-wrap"><table class="bench-table"><thead><tr>
+<th>Time (s)</th>
+<th>GPU °C</th>
+<th>GPU util %</th>
+<th>GPU W</th>
+<th>CPU °C</th>
+</tr></thead><tbody>
+<tr>
+<td class="nowrap">0</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">9.51</td>
+</tr>
+<tr>
+<td class="nowrap">3</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.03</td>
+</tr>
+<tr>
+<td class="nowrap">5</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.31</td>
+</tr>
+<tr>
+<td class="nowrap">8</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.02</td>
+</tr>
+<tr>
+<td class="nowrap">10</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.22</td>
+</tr>
+<tr>
+<td class="nowrap">13</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.08</td>
+</tr>
+<tr>
+<td class="nowrap">15</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.08</td>
+</tr>
+<tr>
+<td class="nowrap">17</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.21</td>
+</tr>
+<tr>
+<td class="nowrap">20</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.3</td>
+</tr>
+<tr>
+<td class="nowrap">22</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.07</td>
+</tr>
+<tr>
+<td class="nowrap">25</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.06</td>
+</tr>
+<tr>
+<td class="nowrap">27</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.09</td>
+</tr>
+<tr>
+<td class="nowrap">30</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.95</td>
+</tr>
+<tr>
+<td class="nowrap">32</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.07</td>
+</tr>
+<tr>
+<td class="nowrap">35</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.09</td>
+</tr>
+<tr>
+<td class="nowrap">37</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.07</td>
+</tr>
+<tr>
+<td class="nowrap">40</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.33</td>
+</tr>
+<tr>
+<td class="nowrap">42</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.9</td>
+</tr>
+<tr>
+<td class="nowrap">45</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.07</td>
+</tr>
+<tr>
+<td class="nowrap">47</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.85</td>
+</tr>
+<tr>
+<td class="nowrap">50</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.2</td>
+</tr>
+<tr>
+<td class="nowrap">52</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.16</td>
+</tr>
+<tr>
+<td class="nowrap">55</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.05</td>
+</tr>
+<tr>
+<td class="nowrap">57</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.25</td>
+</tr>
+<tr>
+<td class="nowrap">60</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.15</td>
+</tr>
+<tr>
+<td class="nowrap">62</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.05</td>
+</tr>
+</tbody></table></div>
+
+</details>
+
+<hr>
+
+<h3 id="pp-512-tg-256">pp=512 tg=256</h3>
+
+<div class="table-wrap"><table class="bench-table"><thead><tr>
+<th>model</th>
+<th>test</th>
+<th>t/s</th>
+<th>peak t/s</th>
+<th>ttfr (ms)</th>
+<th>est_ppt (ms)</th>
+<th>e2e_ttft (ms)</th>
+</tr></thead><tbody>
+<tr>
+<td class="model-name">jjansen/adapt-finance-llama2-7b</td>
+<td>pp512</td>
+<td class="nowrap">292.87 ± 14.37</td>
+<td class="nowrap"></td>
+<td class="nowrap">1488.83 ± 59.08</td>
+<td class="nowrap">1245.76 ± 59.08</td>
+<td class="nowrap">1488.83 ± 59.08</td>
+</tr>
+<tr>
+<td class="model-name">jjansen/adapt-finance-llama2-7b</td>
+<td>tg256</td>
+<td class="nowrap">24.21 ± 0.04</td>
+<td class="nowrap">25.00 ± 0.00</td>
+<td class="nowrap"></td>
+<td class="nowrap"></td>
+<td class="nowrap"></td>
+</tr>
+</tbody></table></div>
+
+<h4 id="temperatures-utilization">Temperatures &amp; Utilization</h4>
+
+<div class="mermaid" data-src="xychart-beta
+  title &quot;Temperature — pp=512 tg=256&quot;
+  x-axis &quot;Time (s)&quot; [0, 3, 5, 8, 10, 13, 15, 18, 20, 23, 25, 28, 30]
+  y-axis &quot;W&quot; 0 --&gt; 11.059999999999999
+  line &quot;CPU W&quot; [6.06, 0.05, 0.18, 0.14, 0.21, 0.17, 0.34, 0.16, 0.29, 0.15, 0.27, 0.17, 0.57]">xychart-beta
+  title &quot;Temperature — pp=512 tg=256&quot;
+  x-axis &quot;Time (s)&quot; [0, 3, 5, 8, 10, 13, 15, 18, 20, 23, 25, 28, 30]
+  y-axis &quot;W&quot; 0 --&gt; 11.059999999999999
+  line &quot;CPU W&quot; [6.06, 0.05, 0.18, 0.14, 0.21, 0.17, 0.34, 0.16, 0.29, 0.15, 0.27, 0.17, 0.57]</div>
+
+<details><summary>Raw readings</summary>
+
+<div class="table-wrap"><table class="bench-table"><thead><tr>
+<th>Time (s)</th>
+<th>GPU °C</th>
+<th>GPU util %</th>
+<th>GPU W</th>
+<th>CPU °C</th>
+</tr></thead><tbody>
+<tr>
+<td class="nowrap">0</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">6.06</td>
+</tr>
+<tr>
+<td class="nowrap">3</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.05</td>
+</tr>
+<tr>
+<td class="nowrap">5</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.18</td>
+</tr>
+<tr>
+<td class="nowrap">8</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.14</td>
+</tr>
+<tr>
+<td class="nowrap">10</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.21</td>
+</tr>
+<tr>
+<td class="nowrap">13</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.17</td>
+</tr>
+<tr>
+<td class="nowrap">15</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.34</td>
+</tr>
+<tr>
+<td class="nowrap">18</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.16</td>
+</tr>
+<tr>
+<td class="nowrap">20</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.29</td>
+</tr>
+<tr>
+<td class="nowrap">23</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.15</td>
+</tr>
+<tr>
+<td class="nowrap">25</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.27</td>
+</tr>
+<tr>
+<td class="nowrap">28</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.17</td>
+</tr>
+<tr>
+<td class="nowrap">30</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.57</td>
+</tr>
+</tbody></table></div>
+
+</details>
+
+<hr>
+
+<h3 id="pp-2048-tg-64">pp=2048 tg=64</h3>
+
+<div class="table-wrap"><table class="bench-table"><thead><tr>
+<th>model</th>
+<th>test</th>
+<th>t/s</th>
+<th>peak t/s</th>
+<th>ttfr (ms)</th>
+<th>est_ppt (ms)</th>
+<th>e2e_ttft (ms)</th>
+</tr></thead><tbody>
+<tr>
+<td class="model-name">jjansen/adapt-finance-llama2-7b</td>
+<td>pp2048</td>
+<td class="nowrap">258.93 ± 0.75</td>
+<td class="nowrap"></td>
+<td class="nowrap">8076.63 ± 64.61</td>
+<td class="nowrap">7833.54 ± 64.61</td>
+<td class="nowrap">8076.63 ± 64.61</td>
+</tr>
+<tr>
+<td class="model-name">jjansen/adapt-finance-llama2-7b</td>
+<td>tg64</td>
+<td class="nowrap">21.91 ± 0.02</td>
+<td class="nowrap">22.33 ± 0.47</td>
+<td class="nowrap"></td>
+<td class="nowrap"></td>
+<td class="nowrap"></td>
+</tr>
+</tbody></table></div>
+
+<h4 id="temperatures-utilization">Temperatures &amp; Utilization</h4>
+
+<div class="mermaid" data-src="xychart-beta
+  title &quot;Temperature — pp=2048 tg=64&quot;
+  x-axis &quot;Time (s)&quot; [0, 3, 5, 8, 10, 13, 15, 18, 20, 23, 25, 28, 30, 33, 35]
+  y-axis &quot;W&quot; 0 --&gt; 7.23
+  line &quot;CPU W&quot; [1.7, 1.13, 0.73, 1.07, 0.32, 1.31, 0.2, 2.23, 0.06, 1.92, 0.58, 1.46, 0.04, 0.26, 0.31]">xychart-beta
+  title &quot;Temperature — pp=2048 tg=64&quot;
+  x-axis &quot;Time (s)&quot; [0, 3, 5, 8, 10, 13, 15, 18, 20, 23, 25, 28, 30, 33, 35]
+  y-axis &quot;W&quot; 0 --&gt; 7.23
+  line &quot;CPU W&quot; [1.7, 1.13, 0.73, 1.07, 0.32, 1.31, 0.2, 2.23, 0.06, 1.92, 0.58, 1.46, 0.04, 0.26, 0.31]</div>
+
+<details><summary>Raw readings</summary>
+
+<div class="table-wrap"><table class="bench-table"><thead><tr>
+<th>Time (s)</th>
+<th>GPU °C</th>
+<th>GPU util %</th>
+<th>GPU W</th>
+<th>CPU °C</th>
+</tr></thead><tbody>
+<tr>
+<td class="nowrap">0</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.7</td>
+</tr>
+<tr>
+<td class="nowrap">3</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.13</td>
+</tr>
+<tr>
+<td class="nowrap">5</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.73</td>
+</tr>
+<tr>
+<td class="nowrap">8</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.07</td>
+</tr>
+<tr>
+<td class="nowrap">10</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.32</td>
+</tr>
+<tr>
+<td class="nowrap">13</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.31</td>
+</tr>
+<tr>
+<td class="nowrap">15</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.2</td>
+</tr>
+<tr>
+<td class="nowrap">18</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">2.23</td>
+</tr>
+<tr>
+<td class="nowrap">20</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.06</td>
+</tr>
+<tr>
+<td class="nowrap">23</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.92</td>
+</tr>
+<tr>
+<td class="nowrap">25</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.58</td>
+</tr>
+<tr>
+<td class="nowrap">28</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.46</td>
+</tr>
+<tr>
+<td class="nowrap">30</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.04</td>
+</tr>
+<tr>
+<td class="nowrap">33</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.26</td>
+</tr>
+<tr>
+<td class="nowrap">35</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.31</td>
+</tr>
+</tbody></table></div>
+
+</details>
+
+<hr>
+
+<h3 id="pp-2048-tg-256">pp=2048 tg=256</h3>
+
+<div class="table-wrap"><table class="bench-table"><thead><tr>
+<th>model</th>
+<th>test</th>
+<th>t/s</th>
+<th>peak t/s</th>
+<th>ttfr (ms)</th>
+<th>est_ppt (ms)</th>
+<th>e2e_ttft (ms)</th>
+</tr></thead><tbody>
+<tr>
+<td class="model-name">jjansen/adapt-finance-llama2-7b</td>
+<td>pp2048</td>
+<td class="nowrap">257.56 ± 1.75</td>
+<td class="nowrap"></td>
+<td class="nowrap">8373.62 ± 350.36</td>
+<td class="nowrap">8131.08 ± 350.36</td>
+<td class="nowrap">8373.62 ± 350.36</td>
+</tr>
+<tr>
+<td class="model-name">jjansen/adapt-finance-llama2-7b</td>
+<td>tg256</td>
+<td class="nowrap">21.53 ± 0.16</td>
+<td class="nowrap">22.33 ± 0.47</td>
+<td class="nowrap"></td>
+<td class="nowrap"></td>
+<td class="nowrap"></td>
+</tr>
+</tbody></table></div>
+
+<h4 id="temperatures-utilization">Temperatures &amp; Utilization</h4>
+
+<div class="mermaid" data-src="xychart-beta
+  title &quot;Temperature — pp=2048 tg=256&quot;
+  x-axis &quot;Time (s)&quot; [0, 3, 5, 8, 10, 13, 15, 18, 20, 23, 25, 28, 30, 33, 35, 38, 41, 43, 46, 48]
+  y-axis &quot;W&quot; 0 --&gt; 10.02
+  line &quot;CPU W&quot; [5.02, 2.52, 0.06, 1.38, 0.06, 1.23, 0.13, 1.11, 0.15, 0.83, 0.06, 0.73, 0.05, 0.07, 0.05, 0.14, 0.1, 0.22, 0.12, 1.05]">xychart-beta
+  title &quot;Temperature — pp=2048 tg=256&quot;
+  x-axis &quot;Time (s)&quot; [0, 3, 5, 8, 10, 13, 15, 18, 20, 23, 25, 28, 30, 33, 35, 38, 41, 43, 46, 48]
+  y-axis &quot;W&quot; 0 --&gt; 10.02
+  line &quot;CPU W&quot; [5.02, 2.52, 0.06, 1.38, 0.06, 1.23, 0.13, 1.11, 0.15, 0.83, 0.06, 0.73, 0.05, 0.07, 0.05, 0.14, 0.1, 0.22, 0.12, 1.05]</div>
+
+<details><summary>Raw readings</summary>
+
+<div class="table-wrap"><table class="bench-table"><thead><tr>
+<th>Time (s)</th>
+<th>GPU °C</th>
+<th>GPU util %</th>
+<th>GPU W</th>
+<th>CPU °C</th>
+</tr></thead><tbody>
+<tr>
+<td class="nowrap">0</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">5.02</td>
+</tr>
+<tr>
+<td class="nowrap">3</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">2.52</td>
+</tr>
+<tr>
+<td class="nowrap">5</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.06</td>
+</tr>
+<tr>
+<td class="nowrap">8</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.38</td>
+</tr>
+<tr>
+<td class="nowrap">10</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.06</td>
+</tr>
+<tr>
+<td class="nowrap">13</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.23</td>
+</tr>
+<tr>
+<td class="nowrap">15</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.13</td>
+</tr>
+<tr>
+<td class="nowrap">18</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.11</td>
+</tr>
+<tr>
+<td class="nowrap">20</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.15</td>
+</tr>
+<tr>
+<td class="nowrap">23</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.83</td>
+</tr>
+<tr>
+<td class="nowrap">25</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.06</td>
+</tr>
+<tr>
+<td class="nowrap">28</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.73</td>
+</tr>
+<tr>
+<td class="nowrap">30</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.05</td>
+</tr>
+<tr>
+<td class="nowrap">33</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.07</td>
+</tr>
+<tr>
+<td class="nowrap">35</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.05</td>
+</tr>
+<tr>
+<td class="nowrap">38</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.14</td>
+</tr>
+<tr>
+<td class="nowrap">41</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.1</td>
+</tr>
+<tr>
+<td class="nowrap">43</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.22</td>
+</tr>
+<tr>
+<td class="nowrap">46</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">0.12</td>
+</tr>
+<tr>
+<td class="nowrap">48</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td class="nowrap">1.05</td>
+</tr>
+</tbody></table></div>
+
+</details>
+
+<hr>
+
+</details></section>
+</div>
+<div id="tab-compare" class="tab-pane">
+<section id="comparison">
+<h2>⚖ Cross-Machine Comparison</h2>
+<p>Models tested on 2+ machines. <strong>Bold</strong> = fastest for that model.</p>
+<div class="machine-legend"><span class="legend-dot" style="background:hsl(210,65%,45%)"></span><span class="legend-label">AMD Ryzen 7 + RTX 2080 Super</span><span class="legend-dot" style="background:hsl(30,70%,45%)"></span><span class="legend-label">Apple M4 Mac Mini 16GB</span></div><h4>TG Speed (avg tok/s @ pp=512)</h4><div class="table-wrap"><table class="bench-table"><thead><tr><th>Model</th><th class="nowrap">AMD Ryzen 7 + RTX 2080 Super</th><th class="nowrap">Apple M4 Mac Mini 16GB</th><th class="nowrap">Best</th></tr></thead><tbody>
+<tr><td class="model-name">qwen3:8b</td><td class="nowrap"><strong>73.3</strong></td><td class="nowrap">19.5</td><td class="nowrap">AMD Ryzen 7 + RTX 2080 Super</td></tr>
+</tbody></table></div><div class="cbar-wrap"><div class="cbar-title">TG Speed by model &amp; machine</div><div class="cbar-row"><span class="cbar-label" title="qwen3:8b @ AMD Ryzen 7 + RTX 2080 Super">qwen3:8b @ AMD Ryzen 7 + RTX 2080 Super</span><div class="cbar-track"><div class="cbar-fill" style="width:100.0%;background:hsl(210,65%,45%)"><span class="cbar-val">73.3 tok/s</span></div></div></div><div class="cbar-row"><span class="cbar-label" title="qwen3:8b @ Apple M4 Mac Mini 16GB">qwen3:8b @ Apple M4 Mac Mini 16GB</span><div class="cbar-track"><div class="cbar-fill" style="width:26.6%;background:hsl(30,70%,45%)"><span class="cbar-val">19.5 tok/s</span></div></div></div></div><h4>PP Speed (tok/s @ pp=512)</h4><div class="table-wrap"><table class="bench-table"><thead><tr><th>Model</th><th class="nowrap">AMD Ryzen 7 + RTX 2080 Super</th><th class="nowrap">Apple M4 Mac Mini 16GB</th><th class="nowrap">Best</th></tr></thead><tbody>
+<tr><td class="model-name">qwen3:8b</td><td class="nowrap"><strong>1,891.0</strong></td><td class="nowrap">224.0</td><td class="nowrap">AMD Ryzen 7 + RTX 2080 Super</td></tr>
+</tbody></table></div><div class="cbar-wrap"><div class="cbar-title">PP Speed by model &amp; machine</div><div class="cbar-row"><span class="cbar-label" title="qwen3:8b @ AMD Ryzen 7 + RTX 2080 Super">qwen3:8b @ AMD Ryzen 7 + RTX 2080 Super</span><div class="cbar-track"><div class="cbar-fill" style="width:100.0%;background:hsl(210,65%,45%)"><span class="cbar-val">1,891 tok/s</span></div></div></div><div class="cbar-row"><span class="cbar-label" title="qwen3:8b @ Apple M4 Mac Mini 16GB">qwen3:8b @ Apple M4 Mac Mini 16GB</span><div class="cbar-track"><div class="cbar-fill" style="width:11.8%;background:hsl(30,70%,45%)"><span class="cbar-val">224 tok/s</span></div></div></div></div></section>
+
+</div>
+
 </main>
 <script>
 const THEMES = ['light','dark','solar','twilight'];
@@ -19830,7 +26686,6 @@ function rerenderMermaid(theme) {
   mermaid.run();
 }
 
-// Lazy render: only run mermaid in a model section when it opens
 document.querySelectorAll('.model-section details').forEach(det => {
   det.addEventListener('toggle', () => {
     if (!det.open) return;
@@ -19843,11 +26698,55 @@ document.querySelectorAll('.model-section details').forEach(det => {
   });
 });
 
-// Expand / Collapse all
 document.getElementById('expand-all').addEventListener('click', () =>
   document.querySelectorAll('.model-section details').forEach(d => d.open = true));
 document.getElementById('collapse-all').addEventListener('click', () =>
   document.querySelectorAll('.model-section details').forEach(d => d.open = false));
+
+// ── Machine tabs ──────────────────────────────────────────────────────────────
+const MACHINE_IDS = ["stealth","m4"];
+const HAS_MULTI   = MACHINE_IDS.length > 1;
+let   activeTab   = localStorage.getItem('bench-tab') || MACHINE_IDS[0];
+if (!MACHINE_IDS.includes(activeTab) && activeTab !== 'compare') activeTab = MACHINE_IDS[0];
+
+function switchTab(tabId) {
+  activeTab = tabId;
+  localStorage.setItem('bench-tab', tabId);
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  const pane = document.getElementById('tab-' + tabId);
+  if (pane) pane.classList.add('active');
+  document.querySelectorAll('.machine-tab-bar button').forEach(b => {
+    b.classList.toggle('active', b.dataset.tab === tabId);
+  });
+  document.querySelectorAll('.nav-machine').forEach(a => {
+    a.classList.toggle('active', a.dataset.tab === tabId);
+  });
+  // Show/hide machine-specific nav sections
+  MACHINE_IDS.forEach(mid => {
+    document.querySelectorAll('.nav-models-' + mid).forEach(el => {
+      el.style.display = (tabId === mid || !HAS_MULTI) ? '' : 'none';
+    });
+  });
+  // Trigger mermaid render for newly visible open details
+  document.querySelectorAll('#tab-' + tabId + ' .model-section details[open] .mermaid').forEach(el => {
+    if (!el.getAttribute('data-processed')) {
+      el.innerHTML = el.getAttribute('data-src') || el.innerHTML;
+    }
+  });
+  mermaid.run();
+}
+
+if (HAS_MULTI) {
+  document.querySelectorAll('.machine-tab-bar button').forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  });
+  document.querySelectorAll('.nav-machine').forEach(a => {
+    a.addEventListener('click', e => { e.preventDefault(); switchTab(a.dataset.tab); });
+  });
+  switchTab(activeTab);
+} else {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.add('active'));
+}
 
 // Scrollspy
 const navLinks = document.querySelectorAll('.nav-link[data-section]');
