@@ -68,5 +68,13 @@
       div.textContent = el.textContent;
       el.parentElement.replaceWith(div);
     });
-    mermaid.initialize({ startOnLoad: true });
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'base',
+      themeVariables: {
+        xyChart: {
+          plotColorPalette: '#e05252,#4a90d9,#27ae60,#e67e22,#8e44ad'
+        }
+      }
+    });
   </script>

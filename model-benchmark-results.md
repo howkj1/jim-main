@@ -1,3 +1,10 @@
+  ---
+  layout: default
+  custom_css: benchmark
+  ---
+
+
+
 # Stealth Machine — Full Benchmark Summary
 
 **Machine:** stealth (AMD) — Ryzen 7 3700X, RTX 2080 SUPER 8GB VRAM, 32GB RAM  
